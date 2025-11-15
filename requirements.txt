@@ -93,3 +93,5 @@ xxhash==3.5.0
 yarl==1.20.1
 youtube-transcript-api==0.6.2
 zstandard==0.23.0
+pytesseract
+pymupdf
