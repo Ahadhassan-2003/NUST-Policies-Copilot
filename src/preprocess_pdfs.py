@@ -3,7 +3,6 @@
 import os
 import re
 import json
-import hashlib
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
@@ -79,32 +78,38 @@ PDF_SECTION_MAPPINGS = {
         'Hostel Administration'
     ],
     'FYP_Guidelines_02_11_2017_v1.4.pdf': [
-        'INTRODUCTION',
-        'DEGREE PROGRAM LEARNING OUTCOMES (PLOs)',
-        'OVERVIEW OF FINAL YEAR PROJECT',
-        'FYP MILESTONES AND EVALUATION STAGES',
-        'Proposal Defense',
-        'Mid-Defense/ Design Expo',
-        'Final Defense',
-        'Open House',
-        'GUIDELINES FOR PROJECT SUPERVISION',
-        'Tasks expected from supervisors',
-        'Project Development Life Cycle',
-        'TEAM LEADERSHIP',
-        'STUDENTS RESPONSIBILITY',
-        'LATE SUBMISSIONS',
-        'PLAGIARISM'
+        '1.1 INTRODUCTION',
+        ' 1.2 DEGREE PROGRAM LEARNING OUTCOMES (PLOs)',
+        '1.3 OVERVIEW OF FINAL YEAR PROJECT',
+        '1.4 FYP MILESTONES AND EVALUATION STAGES',
+        '1.5 GUIDELINES FOR PROJECT SUPERVISION',
+        ' 1.6 TEAM LEADERSHIP',
+        ' 1.7 STUDENTS RESPONSIBILITY',
+        '1.8 LATE SUBMISSIONS',
+        '1.9 PLAGIARISM',
+        'FYP Proposal Document Template',
+        'FYP Proposal Defense Evaluation Form and Rubrics ',
+        'FYP Proposal Defence Evaluation Form ',
+        'FYP SRS Document Template',
+        'SRS Evaluation Form',
+        'Rubrics for Evaluation of FYP Design Expo Poster',
+        'FYP Design Expo Poster Evaluation Form',
+        'Rubrics for Evaluation of FYP Mid Defence Presentation',
+        'FYP Mid Defence Evaluation Form',
+        'FYP Final Report Template',
+        'Rubrics for Evaluation of FYP Report',
+        'FYP Report Evaluation Form',
+        'Rubrics for Evaluation of FYP Demonstration',
+        'FYP Demonstration Evaluation Form',
+        'Rubrics for Evaluation of FYP Defence Oral Presentation',
+        'FYP Defence Oral Presentation Evaluation Form',
+        'PROJECT EVALUATION FORM (Open House)',
+        'References'
+        
     ],
     'MARCOMS-PROSPECTUS-2025-V.5.0-04032025_compressed.pdf': [
         'ABOUT THE UNIVERSITY',
-        'Defining Futures',
-        'Why Choose NUST?',
-        'Location',
-        'Who to Contact',
-        'International Affairs',
-        'Student Affairs',
-        'Accreditations',
-        'Membership of Quality Assurance Association/Network',
+        
         'NUST CAMPUSES & INSTITUTIONS',
         'School of Electrical Engineering and Computer Science (SEECS)',
         'NUST Business School (NBS)',
@@ -140,31 +145,36 @@ PDF_SECTION_MAPPINGS = {
     ],
     'UG-Student-Handbook.pdf': [
         'The University',
-        'Scheme of Studies',
-        'Examinations',
-        'Academic Standards',
+        'Scheme of Studies, Examinations, and Academic Standards for Award of Degrees ',
         'Award of Bachelor Degree and Academic Deficiencies (Applicable to all programmes except those specified separately)',
         'Award of Bachelor of Industrial Design & Architecture Degrees and Academic Deficiencies',
-        'Academic Provisions & Flexibilities',
+        'Award of Bachelors Degree in Management/Social Sciences and Academic Deficiencies',
         'Issuance of Bachelor Degrees & Transcripts and Award of Medals & Prizes',
+        'Academic Provisions & Flexibilities',
         'Clubs & Societies',
         'NUST Social Media Accounts & IT Services',
         'NUST Code of Conduct',
         'Living on Campus',
-        'Annexes'
+        'Dress Norms',
+        'Dining Ettiquette',
     ],
     'PG-Student-Handbook.pdf': [
-        'The University',
-        'Salient Academic Regulations: Postgraduate Programmes',
-        'Award of Master Degrees and Academic Standards for Master Students (Less Business & Social Sciences)',
-        'Award of Master Degree in Business Administration/Executive Master in Business Administration/Social Sciences',
-        'Award of Ph.D. Degree and Academic Deficiencies for Ph.D. Students',
-        'Academic Provisions & Flexibilities',
-        'Clubs & Societies',
-        'Services for International Students',
-        'NUST Social Media Accounts & IT Services',
-        'NUST Code of Conduct',
-        'Living on Campus'
+        'Chapter 1: The University',
+        'Chapter 2: Salient Academic Regulations: Postgraduate Programmes',
+        'Chapter 3: Award of Master Degrees and Academic Standards for Master Students (Less Business & Social Sciences)',
+        'Chapter 4: Award of Master Degree in Business Administration/Executive Master in Business Administration/Social Sciences',
+        'Chapter 5: Award of Ph.D. Degree and Academic Deficiencies for Ph.D. Students',
+        'Chapter 6: Academic Provisions & Flexibilities',
+        'Chapter 7: Clubs & Societies',
+        'Chapter 8: Services for International Students',
+        'Chapter 9: NUST Social Media Accounts & IT Services',
+        'Chapter 10: NUST Code of Conduct',
+        'Chapter 11: Living on Campus',
+        'List of Master & Ph.D. Programmes',
+        'Re-Checking of Papers',
+        'Hostel Allotment Policy'
+
+
     ],
     'PG-Joining-Instructions-Fall-2025.pdf': [
         'Introduction',
@@ -205,10 +215,10 @@ PDF_SECTION_MAPPINGS = {
         'AWARD OF BACHELORS\' DEGREE AND ACADEMIC DEFICIENCIES FOR BACHELOR STUDENTS'
     ],
     'Refund-of-Admission-Dues-Undergraduate-Postgraduate-PhD-1.pdf': {
-        1: None,  # Page 1 all null
-        2: 'GENERAL INSTRUCTIONS'  # Page 2 has this section
+        1: None,
+        2: 'GENERAL INSTRUCTIONS'
     },
-    'Sports-Scholarship-Application-Form-2022-23.pdf': None  # All sections null
+    'Sports-Scholarship-Application-Form-2022-23.pdf': None
 }
 
 # ===================== HELPERS =====================
@@ -219,11 +229,8 @@ def ensure_directories():
 
 def identify_pdf_type(filename: str) -> Optional[str]:
     """Identify PDF type based on exact filename matching."""
-    
-    # Return the exact filename if it exists in our mappings
     if filename in PDF_SECTION_MAPPINGS:
         return filename
-    
     return None
 
 @traceable(name="pdf_page_to_image")
@@ -359,94 +366,80 @@ def extract_year_from_text(text: str) -> Optional[str]:
     
     return None
 
-@traceable(name="find_all_section_positions")
-def find_all_section_positions(text: str, section_list: List[str]) -> List[Tuple[int, str]]:
+@traceable(name="find_section_boundaries")
+def find_section_boundaries(full_text: str, section_list: List[str]) -> List[Tuple[int, str]]:
     """
-    Find all section headings in text and return their positions.
-    Returns list of (position, section_name) tuples sorted by position.
+    Find all section boundaries in the entire document text.
+    Returns sorted list of (position, section_name) tuples.
     """
-    section_positions = []
+    boundaries = []
     
     for section in section_list:
-        # Create case-insensitive pattern
+        # Create case-insensitive pattern matching all words in section
         section_words = section.split()
-        pattern_parts = [re.escape(word) for word in section_words]
-        pattern_str = r'\s+'.join(pattern_parts)
         
-        # Look for the section as a heading
-        # Try multiple patterns in order of strictness
-        patterns = [
-            # Pattern 1: Start of line, section, optional colon/period, whitespace or newline
-            r'(?:^|\n)\s*' + pattern_str + r'\s*[:\.]?\s*(?=\n|$)',
-            # Pattern 2: For table/structured content - section followed by description
-            r'(?:^|\n)\s*' + pattern_str + r'\s*[:\.]?\s+',
-        ]
+        # Escape special regex characters in each word
+        escaped_words = [re.escape(word) for word in section_words]
         
-        for pattern in patterns:
-            for match in re.finditer(pattern, text, re.IGNORECASE | re.MULTILINE):
-                # Store the start position and section name
-                section_positions.append((match.start(), section))
-                break  # Found with this pattern, don't try others
-            
-            if section_positions and section_positions[-1][1] == section:
-                break  # Found this section, move to next
+        # Create pattern: flexible whitespace between words, optional punctuation after
+        pattern = r'\s+'.join(escaped_words)
+        full_pattern = r'(?:^|\n)\s*(' + pattern + r')\s*[:\.]?'
+        
+        # Find all occurrences
+        for match in re.finditer(full_pattern, full_text, re.IGNORECASE | re.MULTILINE):
+            boundaries.append((match.start(), section))
     
     # Sort by position
-    section_positions.sort(key=lambda x: x[0])
+    boundaries.sort(key=lambda x: x[0])
     
-    return section_positions
+    return boundaries
 
-@traceable(name="find_section_for_chunk")
-def find_section_for_chunk(chunk_start_pos: int, section_positions: List[Tuple[int, str]]) -> Optional[str]:
+@traceable(name="get_section_for_position")
+def get_section_for_position(position: int, boundaries: List[Tuple[int, str]]) -> Optional[str]:
     """
-    Find which section a chunk belongs to based on its position.
-    Returns the section that starts before or at the chunk position.
+    Get the active section at a given position in the text.
+    Returns the most recent section that starts before or at this position.
     """
-    if not section_positions:
+    if not boundaries:
         return None
     
-    # Find the last section that starts before or at the chunk position
     current_section = None
-    for pos, section in section_positions:
-        if pos <= chunk_start_pos:
-            current_section = section
+    for bound_pos, section_name in boundaries:
+        if bound_pos <= position:
+            current_section = section_name
         else:
             break
     
     return current_section
 
-@traceable(name="chunk_document_with_mapping")
-def chunk_document_with_mapping(doc: Document, doc_id: str, url: str, year: str, 
-                                pdf_type: Optional[str], all_pages_text: str) -> List[Dict]:
+@traceable(name="chunk_document_robust")
+def chunk_document_robust(doc: Document, doc_id: str, url: str, year: str, 
+                          pdf_type: Optional[str], section_boundaries: List[Tuple[int, str]],
+                          full_text: str, doc_start_position: int) -> List[Dict]:
     """
-    Chunk a document with PDF-specific section mapping.
-    Handles multiple sections per page by tracking positions.
+    Chunk a document with robust section mapping.
     """
     text = doc.page_content
     page = doc.metadata.get('page', 1)
     
-    # Get section list for this PDF type
-    section_list = None
-    if pdf_type and pdf_type in PDF_SECTION_MAPPINGS:
-        section_list = PDF_SECTION_MAPPINGS[pdf_type]
+    # Handle special cases
+    if pdf_type:
+        section_config = PDF_SECTION_MAPPINGS.get(pdf_type)
         
-        # Handle special case: refund PDF with page-specific mapping
-        if isinstance(section_list, dict):
-            default_section = section_list.get(page)
-            section_list = None  # Don't use position-based matching
+        # Refund PDF: page-specific sections
+        if isinstance(section_config, dict):
+            default_section = section_config.get(page)
+            use_boundaries = False
+        # Sports Scholarship: all null
+        elif section_config is None:
+            default_section = None
+            use_boundaries = False
         else:
             default_section = None
+            use_boundaries = True
     else:
         default_section = None
-    
-    # Handle special case: sports_scholarship - all null
-    if section_list is None and pdf_type == 'Sports-Scholarship-Application-Form-2022-23.pdf':
-        default_section = None
-    
-    # Find all section positions in the page text
-    section_positions = []
-    if section_list and isinstance(section_list, list):
-        section_positions = find_all_section_positions(text, section_list)
+        use_boundaries = False
     
     # Initialize splitter
     splitter = RecursiveCharacterTextSplitter(
@@ -460,16 +453,23 @@ def chunk_document_with_mapping(doc: Document, doc_id: str, url: str, year: str,
     
     results = []
     for chunk_text in chunks:
-        # Find where this chunk starts in the page text
-        chunk_start = text.find(chunk_text[:min(100, len(chunk_text))])
+        # Find where this chunk starts in the full document
+        chunk_preview = chunk_text[:min(100, len(chunk_text))]
         
-        # Determine section for this chunk
-        if default_section is not None:
-            section = default_section
-        elif section_positions:
-            section = find_section_for_chunk(chunk_start if chunk_start >= 0 else 0, section_positions)
+        # Find in page text first
+        local_pos = text.find(chunk_preview)
+        
+        # Calculate absolute position in full document
+        if local_pos >= 0:
+            absolute_pos = doc_start_position + local_pos
         else:
-            section = None
+            absolute_pos = doc_start_position
+        
+        # Determine section
+        if not use_boundaries:
+            section = default_section
+        else:
+            section = get_section_for_position(absolute_pos, section_boundaries)
         
         chunk_data = {
             "doc_id": doc_id,
@@ -501,9 +501,15 @@ def process_single_pdf(pdf_path: Path) -> Tuple[List[Dict], bool]:
         pdf_type = identify_pdf_type(pdf_path.name)
         if pdf_type:
             print(f"  ℹ Identified as: {pdf_type}")
-            print(f"  ℹ Available sections: {len(PDF_SECTION_MAPPINGS.get(pdf_type, []) or [])}")
+            section_config = PDF_SECTION_MAPPINGS.get(pdf_type)
+            if isinstance(section_config, list):
+                print(f"  ℹ Section list has {len(section_config)} sections")
+            elif isinstance(section_config, dict):
+                print(f"  ℹ Page-specific sections configured")
+            elif section_config is None:
+                print(f"  ℹ All sections will be null")
         else:
-            print(f"  ⚠ PDF type not recognized, using generic extraction")
+            print(f"  ⚠ PDF type not recognized")
         
         year = extract_year_from_filename(pdf_path.name)
         
@@ -520,34 +526,69 @@ def process_single_pdf(pdf_path: Path) -> Tuple[List[Dict], bool]:
         
         year = year or "unknown"
         
-        # Combine all pages text for context
-        all_pages_text = '\n\n'.join(doc.page_content for doc in documents)
+        # Clean all documents first
+        for doc in documents:
+            doc.page_content = clean_text(doc.page_content)
+            doc.page_content = normalize_dates(doc.page_content)
         
+        # Combine all pages into full text
+        full_text = '\n\n'.join(doc.page_content for doc in documents)
+        
+        # Find all section boundaries in the full document
+        section_boundaries = []
+        if pdf_type:
+            section_config = PDF_SECTION_MAPPINGS.get(pdf_type)
+            if isinstance(section_config, list):
+                section_boundaries = find_section_boundaries(full_text, section_config)
+                print(f"  ✓ Found {len(section_boundaries)} section boundaries")
+        
+        # Track document positions in full text
+        current_position = 0
+        doc_positions = []
+        for doc in documents:
+            doc_positions.append(current_position)
+            current_position += len(doc.page_content) + 2  # +2 for '\n\n'
+        
+        # Process each document
         all_chunks = []
         sections_found = set()
         
-        for doc in tqdm(documents, desc="  Chunking pages", leave=False):
-            cleaned_text = clean_text(doc.page_content)
-            cleaned_text = normalize_dates(cleaned_text)
-            
-            if len(cleaned_text.strip()) < 10:
+        for idx, doc in enumerate(tqdm(documents, desc="  Chunking pages", leave=False)):
+            if len(doc.page_content.strip()) < 10:
                 continue
             
-            doc.page_content = cleaned_text
+            chunks = chunk_document_robust(
+                doc, doc_id, url, year, pdf_type, 
+                section_boundaries, full_text, doc_positions[idx]
+            )
             
-            chunks = chunk_document_with_mapping(doc, doc_id, url, year, pdf_type, all_pages_text)
-            
-            # Track sections found
             for chunk in chunks:
                 if chunk['section']:
                     sections_found.add(chunk['section'])
             
             all_chunks.extend(chunks)
         
+        # Special handling for specific PDFs
+        
+        # 1. Need-Based-Scholarship-Form: assign all to INSTRUCTIONS section
+        if pdf_path.name == 'NUST-Need-Based-Scholarship-Form.pdf':
+            print(f"  ℹ Applying special rule: assigning all chunks to 'INSTRUCTIONS FOR FILLING OUT THE SCHOLARSHIP APPLICATION FORM:'")
+            for chunk in all_chunks:
+                chunk['section'] = 'INSTRUCTIONS FOR FILLING OUT THE SCHOLARSHIP APPLICATION FORM:'
+            sections_found = {'INSTRUCTIONS FOR FILLING OUT THE SCHOLARSHIP APPLICATION FORM:'}
+        
+        # 2. Check-list-for-PhD: if no sections found, assign fallback
+        if pdf_path.name == 'Check-list-for-PhD-admissions.pdf':
+            if not sections_found or all(chunk['section'] is None for chunk in all_chunks):
+                print(f"  ℹ No sections detected, applying fallback: 'Check List – Information Regarding PhD Studies'")
+                for chunk in all_chunks:
+                    chunk['section'] = 'Check List – Information Regarding PhD Studies'
+                sections_found = {'Check List – Information Regarding PhD Studies'}
+        
         print(f"  ✓ Generated {len(all_chunks)} chunks")
         print(f"  ✓ Unique sections found: {len(sections_found)}")
         if sections_found:
-            print(f"     {list(sections_found)[:5]}...")  # Show first 5 sections
+            print(f"     Sections: {list(sections_found)[:3]}...")
         
         return all_chunks, True
         
