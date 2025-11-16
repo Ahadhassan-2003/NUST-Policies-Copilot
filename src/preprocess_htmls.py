@@ -15,7 +15,7 @@ from langchain_community.document_loaders import AsyncChromiumLoader
 
 load_dotenv()
 
-os.environ['LANGCHAIN_PROJECT'] = 'HTML Preprocessing Pipeline'
+os.environ['LANGCHAIN_PROJECT'] = 'NUST Policies Copilot'
 
 ROOT_URLS = [
     "https://nust.edu.pk/admissions/scholarships",

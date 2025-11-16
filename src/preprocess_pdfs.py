@@ -34,7 +34,7 @@ except ImportError as e:
 
 load_dotenv()
 
-os.environ['LANGCHAIN_PROJECT'] = 'NUST Policies Copilot - Preprocessing'
+os.environ['LANGCHAIN_PROJECT'] = 'NUST Policies Copilot'
 
 # ===================== CONFIG =====================
 INPUT_DIR = Path("./data/raw")
