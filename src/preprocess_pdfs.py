@@ -39,7 +39,7 @@ os.environ['LANGCHAIN_PROJECT'] = 'NUST Policies Copilot'
 # ===================== CONFIG =====================
 INPUT_DIR = Path("./data/raw")
 OUTPUT_DIR = Path("./data/processed")
-OUTPUT_FILE = OUTPUT_DIR / "chunks.jsonl"
+OUTPUT_FILE = OUTPUT_DIR / "pdf_chunks.jsonl"
 
 CHUNK_SIZE = 800
 CHUNK_OVERLAP_PERCENT = 15
