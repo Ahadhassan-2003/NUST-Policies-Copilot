@@ -42,11 +42,174 @@ INPUT_DIR = Path("./data/raw")
 OUTPUT_DIR = Path("./data/processed")
 OUTPUT_FILE = OUTPUT_DIR / "chunks.jsonl"
 
-CHUNK_SIZE = 800  # characters (approximates 200-250 tokens)
-CHUNK_OVERLAP_PERCENT = 15  # 15% overlap
+CHUNK_SIZE = 800
+CHUNK_OVERLAP_PERCENT = 15
 CHUNK_OVERLAP = int(CHUNK_SIZE * CHUNK_OVERLAP_PERCENT / 100)
 
-MIN_PAGE_CHARS = 30  # threshold for OCR fallback
+MIN_PAGE_CHARS = 30
+
+# ===================== PDF-SPECIFIC SECTION MAPPINGS =====================
+
+PDF_SECTION_MAPPINGS = {
+    'NUST-HOSTEL-RULES.pdf': [
+        'Introduction',
+        'Allotment of Hostel Accommodation',
+        'Hostel Dues',
+        'Attendance',
+        'Fine',
+        'Guests',
+        'Temporary Hostel Allotment',
+        'Conveyance/ Driving',
+        'Messing',
+        'Meal Timings/Dress Code',
+        'Conduct',
+        'In/Out Timings',
+        'Damage to Property',
+        'TV Timings',
+        'Penalties',
+        'Discipline',
+        'Inspections',
+        'Medical Care',
+        'Washerman Services',
+        'Indoor Sports',
+        'Temporary Vacation of Hostels',
+        'Final Vacation of Hostels',
+        'Procedure to Vacate the Hostel',
+        "Do's and Dont's",
+        'Hostel Administration'
+    ],
+    'FYP_Guidelines_02_11_2017_v1.4.pdf': [
+        'INTRODUCTION',
+        'DEGREE PROGRAM LEARNING OUTCOMES (PLOs)',
+        'OVERVIEW OF FINAL YEAR PROJECT',
+        'FYP MILESTONES AND EVALUATION STAGES',
+        'Proposal Defense',
+        'Mid-Defense/ Design Expo',
+        'Final Defense',
+        'Open House',
+        'GUIDELINES FOR PROJECT SUPERVISION',
+        'Tasks expected from supervisors',
+        'Project Development Life Cycle',
+        'TEAM LEADERSHIP',
+        'STUDENTS RESPONSIBILITY',
+        'LATE SUBMISSIONS',
+        'PLAGIARISM'
+    ],
+    'MARCOMS-PROSPECTUS-2025-V.5.0-04032025_compressed.pdf': [
+        'ABOUT THE UNIVERSITY',
+        'Defining Futures',
+        'Why Choose NUST?',
+        'Location',
+        'Who to Contact',
+        'International Affairs',
+        'Student Affairs',
+        'Accreditations',
+        'Membership of Quality Assurance Association/Network',
+        'NUST CAMPUSES & INSTITUTIONS',
+        'School of Electrical Engineering and Computer Science (SEECS)',
+        'NUST Business School (NBS)',
+        'School of Social Sciences and Humanities (S3H)',
+        'School of Chemical and Materials Engineering (SCME)',
+        'School of Civil and Environmental Engineering (SCEE)',
+        'School of Mechanical and Manufacturing Engineering (SMME)',
+        'School of Art, Design and Architecture (SADA)',
+        'School of Interdisciplinary Engineering and Sciences (SINES)',
+        'College of Aeronautical Engineering (CAE)',
+        'Atta-ur-Rahman School of Applied Biosciences (ASAB)',
+        'NUST Center for Advanced Studies in Energy (USPCASE)',
+        'NUST Institute of Peace and Conflict Studies (NIPCONS)',
+        'Center for Peace and Conflict Studies (CPCS)',
+        'NUST Institute of Civil Engineering (NICE)',
+        'NUST School of Health Sciences (NSHS)',
+        'Military College of Signals (MCS)',
+        'College of Electrical and Mechanical Engineering (CEME)',
+        'Military College of Engineering (MCE)',
+        'College of Aeronautical Engineering (CAE)',
+        'National Institute of Transportation (NIT)',
+        'NUST Islamabad Campus (NIC)',
+        'NUST Balochistan Campus (NBC)',
+        'FEE AND FUNDING',
+        'National Students',
+        'Undergraduate Programmes',
+        'Postgraduate Programmes',
+        'International Students',
+        'NUST Entry Test (NET)',
+        'Instructions for NET',
+        'Specimen Answer Sheet',
+        'APPLYING TO NUST'
+    ],
+    'UG-Student-Handbook.pdf': [
+        'The University',
+        'Scheme of Studies',
+        'Examinations',
+        'Academic Standards',
+        'Award of Bachelor Degree and Academic Deficiencies (Applicable to all programmes except those specified separately)',
+        'Award of Bachelor of Industrial Design & Architecture Degrees and Academic Deficiencies',
+        'Academic Provisions & Flexibilities',
+        'Issuance of Bachelor Degrees & Transcripts and Award of Medals & Prizes',
+        'Clubs & Societies',
+        'NUST Social Media Accounts & IT Services',
+        'NUST Code of Conduct',
+        'Living on Campus',
+        'Annexes'
+    ],
+    'PG-Student-Handbook.pdf': [
+        'The University',
+        'Salient Academic Regulations: Postgraduate Programmes',
+        'Award of Master Degrees and Academic Standards for Master Students (Less Business & Social Sciences)',
+        'Award of Master Degree in Business Administration/Executive Master in Business Administration/Social Sciences',
+        'Award of Ph.D. Degree and Academic Deficiencies for Ph.D. Students',
+        'Academic Provisions & Flexibilities',
+        'Clubs & Societies',
+        'Services for International Students',
+        'NUST Social Media Accounts & IT Services',
+        'NUST Code of Conduct',
+        'Living on Campus'
+    ],
+    'PG-Joining-Instructions-Fall-2025.pdf': [
+        'Introduction',
+        'Immediate Tasks:',
+        'Tasks to be done before arrival at SEECS, NUST.',
+        'Registration/Documentation (Date/Time/Venue):',
+        'Entry in NUST',
+        'Location of SEECS:',
+        'Student Handbook',
+        'Commencement of Clases Fall, 2025 Semester.',
+        'SURETY BOND',
+        'Medical Fitness Certificate',
+        'CERTIFICATE BY THE DOCTOR'
+    ],
+    'NUST-Need-Based-Scholarship-Form.pdf': [
+        'PROVIDING FALSE INFORMATION',
+        'INSTRUCTIONS FOR FILLING OUT THE SCHOLARSHIP APPLICATION FORM:',
+        "DO's:",
+        'DO NOT:'
+    ],
+    'Check-list-for-PhD-admissions.pdf': [
+        'PhD Duration:',
+        'Coursework:',
+        'Formation of GEC:',
+        'Qualifying Examination:',
+        'Approval of Thesis Synopsis.',
+        'Research Work:',
+        'Monitoring of PhD:',
+        'Approval of Thesis by GEC.',
+        'Publications.',
+        'Rights of Research',
+        'Selection of Foreign/Local Evaluators:',
+        'Thesis Defence.',
+        'Refund of Admission Dues UG/PG/PhD Students'
+    ],
+    'NUST-Academic-Rules-Regarding-Students.pdf': [
+        'ACADEMIC STANDARDS FOR AWARD OF DEGREES',
+        'AWARD OF BACHELORS\' DEGREE AND ACADEMIC DEFICIENCIES FOR BACHELOR STUDENTS'
+    ],
+    'Refund-of-Admission-Dues-Undergraduate-Postgraduate-PhD-1.pdf': {
+        1: None,  # Page 1 all null
+        2: 'GENERAL INSTRUCTIONS'  # Page 2 has this section
+    },
+    'Sports-Scholarship-Application-Form-2022-23.pdf': None  # All sections null
+}
 
 # ===================== HELPERS =====================
 
@@ -54,27 +217,28 @@ def ensure_directories():
     """Create output directories if they don't exist."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+def identify_pdf_type(filename: str) -> Optional[str]:
+    """Identify PDF type based on exact filename matching."""
+    
+    # Return the exact filename if it exists in our mappings
+    if filename in PDF_SECTION_MAPPINGS:
+        return filename
+    
+    return None
+
 @traceable(name="pdf_page_to_image")
 def pdf_page_to_image(pdf_path: Path, page_num: int):
-    """
-    Convert a specific PDF page to PIL Image using PyMuPDF.
-    page_num is 0-indexed.
-    """
+    """Convert a specific PDF page to PIL Image using PyMuPDF."""
     if not fitz:
         return None
     
     try:
         doc = fitz.open(str(pdf_path))
         page = doc[page_num]
-        
-        # Render page to pixmap with higher resolution for better OCR
-        mat = fitz.Matrix(2.0, 2.0)  # 2x zoom for 144 DPI (default is 72)
+        mat = fitz.Matrix(2.0, 2.0)
         pix = page.get_pixmap(matrix=mat)
-        
-        # Convert pixmap to PIL Image
         img_data = pix.tobytes("png")
         img = Image.open(io.BytesIO(img_data))
-        
         doc.close()
         return img
     except Exception as e:
@@ -83,10 +247,7 @@ def pdf_page_to_image(pdf_path: Path, page_num: int):
 
 @traceable(name="load_pdf_with_ocr_fallback")
 def load_pdf_with_ocr_fallback(pdf_path: Path) -> List[Document]:
-    """
-    Load PDF using PyPDFLoader. If any page has < MIN_PAGE_CHARS,
-    attempt OCR on that page using Tesseract and replace the text.
-    """
+    """Load PDF with OCR fallback for poor quality pages."""
     try:
         loader = PyPDFLoader(str(pdf_path))
         documents = loader.load()
@@ -97,19 +258,14 @@ def load_pdf_with_ocr_fallback(pdf_path: Path) -> List[Document]:
     if not OCR_AVAILABLE or not documents or pytesseract is None or fitz is None:
         return documents
     
-    # Check each page
     for idx, doc in enumerate(documents):
         if len(doc.page_content.strip()) < MIN_PAGE_CHARS:
             try:
                 print(f"    Applying OCR to page {idx + 1}...")
-                
-                # Convert PDF page to image using PyMuPDF
                 img = pdf_page_to_image(pdf_path, idx)
                 
                 if img:
-                    # Perform OCR using Tesseract
                     ocr_text = pytesseract.image_to_string(img)
-                    
                     if len(ocr_text.strip()) > MIN_PAGE_CHARS:
                         doc.page_content = ocr_text
                         doc.metadata['ocr_applied'] = True
@@ -117,7 +273,6 @@ def load_pdf_with_ocr_fallback(pdf_path: Path) -> List[Document]:
                         print(f"    ✓ OCR extracted {len(ocr_text)} characters")
                     else:
                         print(f"    ✗ OCR extracted insufficient text")
-                        
             except Exception as e:
                 print(f"  OCR failed for page {idx+1} in {pdf_path.name}: {e}")
     
@@ -125,17 +280,9 @@ def load_pdf_with_ocr_fallback(pdf_path: Path) -> List[Document]:
 
 @traceable(name="clean_text")
 def clean_text(text: str) -> str:
-    """
-    Clean and normalize text:
-    - Remove excessive whitespace
-    - Remove common headers/footers patterns
-    - Normalize line breaks
-    - Preserve structure (bullets, numbering)
-    """
-    # Remove page numbers pattern (e.g., "Page 1 of 3")
+    """Clean and normalize text."""
     text = re.sub(r'Page\s+\d+\s+of\s+\d+', '', text, flags=re.IGNORECASE)
     
-    # Remove repeated header/footer patterns (3+ identical lines)
     lines = text.split('\n')
     cleaned_lines = []
     prev_line = None
@@ -153,25 +300,15 @@ def clean_text(text: str) -> str:
         prev_line = stripped
     
     text = '\n'.join(cleaned_lines)
-    
-    # Normalize multiple newlines to max 2
     text = re.sub(r'\n{3,}', '\n\n', text)
-    
-    # Normalize multiple spaces to single space
     text = re.sub(r' {2,}', ' ', text)
-    
-    # Remove trailing/leading whitespace per line
     text = '\n'.join(line.rstrip() for line in text.split('\n'))
     
     return text.strip()
 
 @traceable(name="normalize_dates")
 def normalize_dates(text: str) -> str:
-    """
-    Normalize date formats to YYYY-MM-DD where possible.
-    Also expand academic year patterns like 2025-26 to 2025-2026.
-    """
-    # Expand academic year patterns: 2025-26 -> 2025-2026
+    """Normalize date formats."""
     def expand_academic_year(match):
         year1 = match.group(1)
         year2_suffix = match.group(0)[-2:]
@@ -179,8 +316,6 @@ def normalize_dates(text: str) -> str:
     
     text = re.sub(r'\b(20\d{2})[-–]\d{2}\b', expand_academic_year, text)
     
-    # Common date patterns (this is a simple normalization, expand as needed)
-    # DD/MM/YYYY or DD-MM-YYYY -> YYYY-MM-DD
     def normalize_date_match(match):
         try:
             date_str = match.group(0)
@@ -195,18 +330,15 @@ def normalize_dates(text: str) -> str:
             return match.group(0)
     
     text = re.sub(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b', normalize_date_match, text)
-    
     return text
 
 @traceable(name="extract_year_from_filename")
 def extract_year_from_filename(filename: str) -> Optional[str]:
-    """Extract year from filename. Prioritize 4-digit years."""
-    # Look for 4-digit year patterns
+    """Extract year from filename."""
     matches = re.findall(r'\b(20\d{2})\b', filename)
     if matches:
-        return matches[-1]  # Return most recent year if multiple
+        return matches[-1]
     
-    # Look for 2-digit year and assume 20xx
     matches = re.findall(r'\b(\d{2})[_-](\d{2})\b', filename)
     if matches:
         return f"20{matches[-1][0]}"
@@ -215,10 +347,8 @@ def extract_year_from_filename(filename: str) -> Optional[str]:
 
 @traceable(name="extract_year_from_text")
 def extract_year_from_text(text: str) -> Optional[str]:
-    """Extract year from document text (first 1000 chars)."""
+    """Extract year from document text."""
     sample = text[:1000]
-    
-    # Look for academic year patterns like "2025-2026" or "Fall 2025"
     matches = re.findall(r'\b(20\d{2})[–-](20\d{2})\b', sample)
     if matches:
         return matches[0][0]
@@ -229,56 +359,96 @@ def extract_year_from_text(text: str) -> Optional[str]:
     
     return None
 
-@traceable(name="extract_section_heading")
-def extract_section_heading(text: str, position: int) -> Optional[str]:
+@traceable(name="find_all_section_positions")
+def find_all_section_positions(text: str, section_list: List[str]) -> List[Tuple[int, str]]:
     """
-    Extract the nearest heading before the given position.
-    Looks for:
-    - Roman numerals (I., II., III.)
-    - Decimal outlines (1., 1.1, 2.4.3)
-    - Uppercase title lines
+    Find all section headings in text and return their positions.
+    Returns list of (position, section_name) tuples sorted by position.
     """
-    before_text = text[:position]
-    lines = before_text.split('\n')
+    section_positions = []
     
-    # Search backwards for heading patterns
-    for line in reversed(lines[-50:]):  # Check last 50 lines
-        line = line.strip()
+    for section in section_list:
+        # Create case-insensitive pattern
+        section_words = section.split()
+        pattern_parts = [re.escape(word) for word in section_words]
+        pattern_str = r'\s+'.join(pattern_parts)
         
-        if not line or len(line) > 200:  # Skip empty or too long
-            continue
+        # Look for the section as a heading
+        # Try multiple patterns in order of strictness
+        patterns = [
+            # Pattern 1: Start of line, section, optional colon/period, whitespace or newline
+            r'(?:^|\n)\s*' + pattern_str + r'\s*[:\.]?\s*(?=\n|$)',
+            # Pattern 2: For table/structured content - section followed by description
+            r'(?:^|\n)\s*' + pattern_str + r'\s*[:\.]?\s+',
+        ]
         
-        # Roman numerals
-        if re.match(r'^[IVX]+\.?\s+[A-Z]', line):
-            return line
-        
-        # Decimal outline
-        if re.match(r'^\d+(\.\d+)*\.?\s+[A-Z]', line):
-            return line
-        
-        # All uppercase (at least 3 words)
-        if line.isupper() and len(line.split()) >= 3:
-            return line
-        
-        # Title Case with common policy keywords
-        if re.match(r'^[A-Z][a-z]+(\s+[A-Z][a-z]+){2,}', line):
-            keywords = ['policy', 'admission', 'refund', 'scholarship', 'rules', 'guidelines', 
-                       'requirements', 'procedure', 'registration', 'fee', 'hostel']
-            if any(kw in line.lower() for kw in keywords):
-                return line
+        for pattern in patterns:
+            for match in re.finditer(pattern, text, re.IGNORECASE | re.MULTILINE):
+                # Store the start position and section name
+                section_positions.append((match.start(), section))
+                break  # Found with this pattern, don't try others
+            
+            if section_positions and section_positions[-1][1] == section:
+                break  # Found this section, move to next
     
-    return None
+    # Sort by position
+    section_positions.sort(key=lambda x: x[0])
+    
+    return section_positions
 
-@traceable(name="chunk_document")
-def chunk_document(doc: Document, doc_id: str, url: str, year: str) -> List[Dict]:
+@traceable(name="find_section_for_chunk")
+def find_section_for_chunk(chunk_start_pos: int, section_positions: List[Tuple[int, str]]) -> Optional[str]:
     """
-    Chunk a document using RecursiveCharacterTextSplitter.
-    Extract metadata for each chunk.
+    Find which section a chunk belongs to based on its position.
+    Returns the section that starts before or at the chunk position.
+    """
+    if not section_positions:
+        return None
+    
+    # Find the last section that starts before or at the chunk position
+    current_section = None
+    for pos, section in section_positions:
+        if pos <= chunk_start_pos:
+            current_section = section
+        else:
+            break
+    
+    return current_section
+
+@traceable(name="chunk_document_with_mapping")
+def chunk_document_with_mapping(doc: Document, doc_id: str, url: str, year: str, 
+                                pdf_type: Optional[str], all_pages_text: str) -> List[Dict]:
+    """
+    Chunk a document with PDF-specific section mapping.
+    Handles multiple sections per page by tracking positions.
     """
     text = doc.page_content
     page = doc.metadata.get('page', 1)
     
-    # Initialize splitter with sentence-aware separators
+    # Get section list for this PDF type
+    section_list = None
+    if pdf_type and pdf_type in PDF_SECTION_MAPPINGS:
+        section_list = PDF_SECTION_MAPPINGS[pdf_type]
+        
+        # Handle special case: refund PDF with page-specific mapping
+        if isinstance(section_list, dict):
+            default_section = section_list.get(page)
+            section_list = None  # Don't use position-based matching
+        else:
+            default_section = None
+    else:
+        default_section = None
+    
+    # Handle special case: sports_scholarship - all null
+    if section_list is None and pdf_type == 'Sports-Scholarship-Application-Form-2022-23.pdf':
+        default_section = None
+    
+    # Find all section positions in the page text
+    section_positions = []
+    if section_list and isinstance(section_list, list):
+        section_positions = find_all_section_positions(text, section_list)
+    
+    # Initialize splitter
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
@@ -290,9 +460,16 @@ def chunk_document(doc: Document, doc_id: str, url: str, year: str) -> List[Dict
     
     results = []
     for chunk_text in chunks:
-        # Find position in original text to extract section
-        position = text.find(chunk_text[:100])  # Use first 100 chars to locate
-        section = extract_section_heading(text, position) if position >= 0 else None
+        # Find where this chunk starts in the page text
+        chunk_start = text.find(chunk_text[:min(100, len(chunk_text))])
+        
+        # Determine section for this chunk
+        if default_section is not None:
+            section = default_section
+        elif section_positions:
+            section = find_section_for_chunk(chunk_start if chunk_start >= 0 else 0, section_positions)
+        else:
+            section = None
         
         chunk_data = {
             "doc_id": doc_id,
@@ -303,7 +480,6 @@ def chunk_document(doc: Document, doc_id: str, url: str, year: str) -> List[Dict
             "chunk_text": chunk_text.strip()
         }
         
-        # Add OCR metadata if available
         if doc.metadata.get('ocr_applied'):
             chunk_data['ocr_applied'] = True
             chunk_data['ocr_engine'] = doc.metadata.get('ocr_engine', 'unknown')
@@ -314,21 +490,23 @@ def chunk_document(doc: Document, doc_id: str, url: str, year: str) -> List[Dict
 
 @traceable(name="process_single_pdf")
 def process_single_pdf(pdf_path: Path) -> Tuple[List[Dict], bool]:
-    """
-    Process a single PDF file and return chunks.
-    Returns: (chunks, success)
-    """
+    """Process a single PDF file and return chunks."""
     print(f"\nProcessing: {pdf_path.name}")
     
     try:
-        # Generate doc_id
         doc_id = pdf_path.stem.lower().replace(' ', '_')
         url = f"./data/raw/{pdf_path.name}"
         
-        # Extract year from filename first
+        # Identify PDF type
+        pdf_type = identify_pdf_type(pdf_path.name)
+        if pdf_type:
+            print(f"  ℹ Identified as: {pdf_type}")
+            print(f"  ℹ Available sections: {len(PDF_SECTION_MAPPINGS.get(pdf_type, []) or [])}")
+        else:
+            print(f"  ⚠ PDF type not recognized, using generic extraction")
+        
         year = extract_year_from_filename(pdf_path.name)
         
-        # Load PDF with OCR fallback
         documents = load_pdf_with_ocr_fallback(pdf_path)
         
         if not documents:
@@ -337,31 +515,40 @@ def process_single_pdf(pdf_path: Path) -> Tuple[List[Dict], bool]:
         
         print(f"  ✓ Loaded {len(documents)} pages")
         
-        # If year not in filename, try extracting from first page
         if not year and documents:
             year = extract_year_from_text(documents[0].page_content)
         
         year = year or "unknown"
         
+        # Combine all pages text for context
+        all_pages_text = '\n\n'.join(doc.page_content for doc in documents)
+        
         all_chunks = []
+        sections_found = set()
         
         for doc in tqdm(documents, desc="  Chunking pages", leave=False):
-            # Clean and normalize
             cleaned_text = clean_text(doc.page_content)
             cleaned_text = normalize_dates(cleaned_text)
             
-            # Skip empty pages
             if len(cleaned_text.strip()) < 10:
                 continue
             
-            # Update document content
             doc.page_content = cleaned_text
             
-            # Chunk the document
-            chunks = chunk_document(doc, doc_id, url, year)
+            chunks = chunk_document_with_mapping(doc, doc_id, url, year, pdf_type, all_pages_text)
+            
+            # Track sections found
+            for chunk in chunks:
+                if chunk['section']:
+                    sections_found.add(chunk['section'])
+            
             all_chunks.extend(chunks)
         
         print(f"  ✓ Generated {len(all_chunks)} chunks")
+        print(f"  ✓ Unique sections found: {len(sections_found)}")
+        if sections_found:
+            print(f"     {list(sections_found)[:5]}...")  # Show first 5 sections
+        
         return all_chunks, True
         
     except Exception as e:
@@ -391,7 +578,6 @@ def process_all_pdfs(input_dir: Path, output_file: Path):
         chunks, success = process_single_pdf(pdf_path)
         all_chunks.extend(chunks)
         
-        # Count OCR pages
         ocr_pages += sum(1 for c in chunks if c.get('ocr_applied', False))
         
         if success:
@@ -399,7 +585,6 @@ def process_all_pdfs(input_dir: Path, output_file: Path):
         else:
             failed += 1
     
-    # Write to JSONL
     print("\n" + "="*50)
     print(f"Writing {len(all_chunks)} chunks to {output_file}")
     with output_file.open('w', encoding='utf-8') as f:
@@ -408,7 +593,6 @@ def process_all_pdfs(input_dir: Path, output_file: Path):
     
     print(f"✓ Preprocessing complete! Output: {output_file}")
     
-    # Print summary statistics
     print("\n" + "="*50)
     print("SUMMARY STATISTICS")
     print("="*50)
@@ -422,7 +606,6 @@ def process_all_pdfs(input_dir: Path, output_file: Path):
         print("\n⚠ Warning: No chunks were generated!")
         return
     
-    # Year distribution
     years = {}
     for chunk in all_chunks:
         y = chunk['year']
@@ -431,7 +614,6 @@ def process_all_pdfs(input_dir: Path, output_file: Path):
     for year, count in sorted(years.items()):
         print(f"  {year}: {count} chunks")
     
-    # Document distribution
     docs = {}
     for chunk in all_chunks:
         d = chunk['doc_id']
@@ -440,11 +622,8 @@ def process_all_pdfs(input_dir: Path, output_file: Path):
     for doc, count in sorted(docs.items(), key=lambda x: x[1], reverse=True)[:10]:
         print(f"  {doc}: {count} chunks")
     
-    # Average chunk size
     avg_chunk_size = sum(len(c['chunk_text']) for c in all_chunks) / len(all_chunks)
     print(f"\nAverage chunk size: {avg_chunk_size:.0f} characters")
-
-# ===================== MAIN =====================
 
 if __name__ == "__main__":
     ensure_directories()
