@@ -99,3 +99,5 @@ bs4
 chromadb
 langchain_huggingface
 sentence_transformers
+langchain_chroma
+rank_bm25
