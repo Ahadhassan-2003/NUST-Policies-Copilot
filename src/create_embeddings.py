@@ -11,7 +11,7 @@ load_dotenv()
 
 # ========= INPUT / OUTPUT PATHS ========= #
 
-PDF_JSONL = Path("./data/processed/chunks.jsonl")
+PDF_JSONL = Path("./data/processed/pdf_chunks.jsonl")
 HTML_JSONL = Path("./data/processed/html_chunks.jsonl")
 
 INDEX_A_DIR = "./data/vectorstores/chroma_index_openAI"
