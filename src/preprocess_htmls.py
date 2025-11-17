@@ -93,29 +93,25 @@ def extract_main_content(html: str, url: str) -> Dict[str, any]:
     if not main_content:
         main_content = soup
     
-    links = []
-    for a_tag in main_content.find_all('a', href=True):
-        href = a_tag['href']
-        full_url = urljoin(url, href)
-        if full_url.startswith('http'):
-            links.append({
-                'text': a_tag.get_text(strip=True),
-                'url': full_url
-            })
-    
     if 'seecs.nust.edu.pk/contact' in url:
         text_content = extract_contact_info(main_content)
     elif 'seecs.nust.edu.pk/program' in url:
         text_content = extract_curriculum_info(main_content)
-        links = []
     else:
+        for a_tag in main_content.find_all('a', href=True):
+            href = a_tag['href']
+            full_url = urljoin(url, href)
+            if full_url.startswith('http'):
+                link_text = a_tag.get_text(strip=True)
+                if link_text:
+                    a_tag.replace_with(f"{link_text} [Link: {full_url}]")
+        
         text_content = main_content.get_text(separator='\n', strip=True)
         text_content = re.sub(r'\n{3,}', '\n\n', text_content)
     
     return {
         'section': section_title,
-        'text': text_content,
-        'links': links
+        'text': text_content
     }
 
 
@@ -250,15 +246,14 @@ def chunk_text(docs: List[Dict]) -> List[Dict]:
         text = doc['text']
         splits = splitter.split_text(text)
         
-        for i, split in enumerate(splits):
+        for split in splits:
             chunk = {
                 'doc_id': doc['doc_id'],
                 'section': doc['section'],
                 'page': 1,
                 'URL': doc['URL'],
                 'year': doc['year'],
-                'text': split,
-                'links': doc.get('links', []) if i == 0 else []
+                'text': split
             }
             chunks.append(chunk)
     
@@ -274,12 +269,14 @@ def save_jsonl(chunks: List[Dict], path: Path):
 
 
 @traceable(name="extract_links_from_content")
-def extract_links_from_content(links: List[Dict], base_url: str) -> List[str]:
+def extract_links_from_content(text: str, base_url: str) -> List[str]:
     extracted = []
     base_domain = urlparse(base_url).netloc
     
-    for link in links:
-        url = link['url']
+    link_pattern = r'\[Link: (https?://[^\]]+)\]'
+    matches = re.findall(link_pattern, text)
+    
+    for url in matches:
         parsed = urlparse(url)
         
         if parsed.netloc == base_domain or 'nust.edu.pk' in parsed.netloc:
@@ -317,14 +314,13 @@ async def process_page(url: str, depth: int = 0, is_seecs: bool = False) -> List
         'section': content['section'],
         'URL': url,
         'year': extract_year(content['text']),
-        'text': content['text'],
-        'links': content['links']
+        'text': content['text']
     }
     
     docs = [doc]
     
     if not is_seecs and depth == 0:
-        child_links = extract_links_from_content(content['links'], url)
+        child_links = extract_links_from_content(content['text'], url)
         for child_url in child_links:
             await asyncio.sleep(0.5)
             child_docs = await process_page(child_url, depth=1, is_seecs=False)
