@@ -39,10 +39,6 @@ GOLD_SET_PATH = Path("./eval/gold_set.jsonl")
 
 # ========= LOAD CHUNKS ========= #
 def load_chunks() -> List[Dict[str, Any]]:
-    """
-    Load chunks from both PDF and HTML JSONL files.
-    Each chunk is a dict with 'text' and 'metadata'.
-    """
     chunks = []
     
     # Helper to load from a file
@@ -74,10 +70,6 @@ def load_chunks() -> List[Dict[str, Any]]:
 
 # ========= LOAD VECTOR INDICES ========= #
 def load_vector_indices():
-    """
-    Load the two Chroma vector stores.
-    Returns: (openai_vectorstore, bge_vectorstore)
-    """
     openai_embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
     bge_embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
     
@@ -90,19 +82,6 @@ def load_vector_indices():
 # ========= HYBRID SEARCH ========= #
 @langsmith.traceable(name="hybrid_search")
 def hybrid_search(query: str, chunks: List[Dict], openai_vs: Chroma, bge_vs: Chroma, k: int = 10) -> List[Dict]:
-    """
-    Perform hybrid search:
-    1. BM25 top 50
-    2. OpenAI dense top 50
-    3. BGE dense top 50
-    4. Fuse with weights (0.35 BM25, 0.35 OpenAI, 0.30 BGE)
-    5. Top 30 fused
-    6. Rerank with cross-encoder to top k
-    Returns list of dicts with 'text', 'metadata', 'score'
-    """
-    
-    # FIX: Convert corpus chunks (dicts) into LangChain Documents
-    # This is essential for BM25Retriever.from_documents to preserve metadata.
     lc_docs = [Document(page_content=c["text"], metadata=c["metadata"]) for c in chunks]
 
     # BM25 retrieval
@@ -208,26 +187,12 @@ def normalize_doc_id(doc_id: Any) -> str:
     return doc_id
 
 def extract_doc_id_variants(doc_id: str) -> list:
-    """
-    Extract different variants of a doc_id for flexible matching.
-    Returns list of possible doc_id representations.
-    
-    Example: "marcoms-prospectus-2025-v.5.0-04032025_compressed.pdf"
-    Returns: [
-        "marcoms-prospectus-2025-v.5.0-04032025",  # normalized
-        "prospectus-2025",                         # core name with year
-        "prospectus",                              # base name
-        "marcoms-prospectus-2025"                  # prefix + name + year
-    ]
-    """
     normalized = normalize_doc_id(doc_id)
     variants = [normalized]
     
     # Split by common separators
     parts = normalized.replace('_', '-').split('-')
     
-    # Try to find base document name (usually the longest meaningful part)
-    # Filter out very short parts and common prefixes
     meaningful_parts = [p for p in parts if len(p) > 2 and p not in ['v', 'vol', 'ver']]
     
     if meaningful_parts:
@@ -256,12 +221,6 @@ def extract_doc_id_variants(doc_id: str) -> list:
     return unique_variants
 
 def is_relevant(retrieved: Dict, gold: Dict, debug: bool = False) -> bool:
-    """
-    Flexible relevance check with multiple fallback strategies:
-    1. Exact doc_id match + (section OR keyword)
-    2. Doc_id variant match + (section OR keyword)
-    3. Strong keyword match (multiple keywords present)
-    """
     ret_doc = retrieved["metadata"].get("doc_id", "")
     ret_source = retrieved["metadata"].get("source", "")
     ret_sec = retrieved["metadata"].get("section", "")
@@ -379,9 +338,6 @@ def diagnose_metadata(chunks: List[Dict], sample_size: int = 5):
 
 def diagnose_query_retrieval(query: str, gold: Dict, chunks: List[Dict], 
                              openai_vs: Chroma, bge_vs: Chroma, k: int = 10):
-    """
-    Detailed diagnosis for a single query.
-    """
     print(f"\n{'='*70}")
     print(f"DIAGNOSING QUERY: {query}")
     print(f"{'='*70}")
