@@ -17,7 +17,6 @@ from hybrid_retriever import initialize_retriever, hybrid_search, load_chunks
 load_dotenv()
 
 # Initialize LangSmith
-os.environ["LANGCHAIN_TRACING_V2"] = "true"
 os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot"
 
 # ========= PATHS ========= #
@@ -228,7 +227,7 @@ def diagnose_query_retrieval(
     
     print(f"Expected doc_ids: {gold.get('expected_doc_ids')}")
     print(f"Expected section: {gold.get('expected_section')}")
-    print(f"Expected keywords: {gold.get('expected_keywords')[:3] if isinstance(gold.get('expected_keywords'), list) else gold.get('expected_keywords')}")
+    print(f"Expected keywords: {gold.get('expected_keywords')[:3] if isinstance(gold.get('expected_keywords'), list) else gold.get('expected_keywords')}") # type: ignore
     
     # Retrieve
     retrieved = hybrid_search(query, bm25_retriever, openai_vs, bge_vs, k=k)

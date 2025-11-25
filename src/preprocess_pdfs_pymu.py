@@ -252,7 +252,7 @@ def pdf_page_to_image(page):
         mat = fitz.Matrix(2.0, 2.0)
         pix = page.get_pixmap(matrix=mat)
         img_data = pix.tobytes("png")
-        img = Image.open(io.BytesIO(img_data))
+        img = Image.open(io.BytesIO(img_data)) # type: ignore
         return img
     except Exception as e:
         print(f"    Error converting page to image: {e}")

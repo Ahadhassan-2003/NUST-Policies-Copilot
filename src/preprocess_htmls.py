@@ -54,7 +54,7 @@ async def fetch_and_parse(url: str) -> Optional[str]:
 
 
 @traceable(name="extract_main_content")
-def extract_main_content(html: str, url: str) -> Dict[str, any]:
+def extract_main_content(html: str, url: str) -> Dict[str, any]: # type: ignore
     soup = BeautifulSoup(html, 'html.parser')
     
     for tag in soup(['script', 'style', 'svg', 'header', 'footer', 'nav']):
@@ -104,7 +104,7 @@ def extract_main_content(html: str, url: str) -> Dict[str, any]:
     else:
         for a_tag in main_content.find_all('a', href=True):
             href = a_tag['href']
-            full_url = urljoin(url, href)
+            full_url = urljoin(url, href) # type: ignore
             if full_url.startswith('http'):
                 link_text = a_tag.get_text(strip=True)
                 if link_text:
