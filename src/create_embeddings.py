@@ -1,13 +1,21 @@
 # create_embeddings.py
 
 import json
+import pickle
 from pathlib import Path
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.retrievers import BM25Retriever
+from langchain_core.documents import Document
 from dotenv import load_dotenv
+from langsmith import traceable
+import os
+
 load_dotenv()
 
+# Initialize LangSmith
+os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot"
 
 # ========= INPUT / OUTPUT PATHS ========= #
 
@@ -16,10 +24,12 @@ HTML_JSONL = Path("./data/processed/html_chunks.jsonl")
 
 INDEX_A_DIR = "./data/vectorstores/chroma_index_openAI"
 INDEX_B_DIR = "./data/vectorstores/chroma_index_bge_m3"
+BM25_INDEX_PATH = Path("./data/vectorstores/bm25_index.pkl")
 
 
 # ========= FLATTEN METADATA FOR CHROMADB ========= #
 
+@traceable(name="flatten_metadata")
 def flatten_metadata(item):
     """
     ChromaDB only supports simple types (str, int, float, bool) in metadata.
@@ -49,6 +59,7 @@ def flatten_metadata(item):
 
 # ========= LOAD CHUNKS ========= #
 
+@traceable(name="load_chunks")
 def load_chunks():
     chunks = []
     
@@ -123,8 +134,47 @@ def load_chunks():
     return chunks
 
 
+# ========= BUILD BM25 INDEX ========= #
+
+@traceable(name="build_bm25_index")
+def build_bm25_index(chunks):
+    print("="*60)
+    print("Creating BM25 Index...")
+    print("="*60)
+    
+    try:
+        # Create LangChain Document objects with metadata
+        lc_docs = [
+            Document(page_content=c["text"], metadata=c["metadata"]) 
+            for c in chunks
+        ]
+        
+        print(f"Building BM25 index from {len(lc_docs)} documents...")
+        
+        # Create BM25 retriever
+        bm25_retriever = BM25Retriever.from_documents(lc_docs)
+        bm25_retriever.k = 50  # Default retrieval count
+        
+        # Save the retriever
+        BM25_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(BM25_INDEX_PATH, 'wb') as f:
+            pickle.dump(bm25_retriever, f)
+        
+        print(f"\n✓ BM25 Index saved at: {BM25_INDEX_PATH}")
+        print(f"  Total documents: {len(lc_docs)}\n")
+        
+        return True
+        
+    except Exception as e:
+        print(f"\n✗ Error creating BM25 Index: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 # ========= BUILD INDEX A (OpenAI Embeddings) ========= #
 
+@traceable(name="build_index_openai")
 def build_index_openai(chunks):
     print("="*60)
     print("Creating Chroma Index A (OpenAI Embeddings)...")
@@ -174,6 +224,7 @@ def build_index_openai(chunks):
 
 # ========= BUILD INDEX B (BAAI/BGE-M3) ========= #
 
+@traceable(name="build_index_bge")
 def build_index_bge(chunks):
     print("="*60)
     print("Creating Chroma Index B (BAAI/bge-m3 Embeddings)...")
@@ -223,8 +274,9 @@ def build_index_bge(chunks):
 
 # ========= MAIN RUNNER ========= #
 
-if __name__ == "__main__":
-    print("Starting embedding generation process...\n")
+@traceable(name="create_all_indices")
+def main():
+    print("Starting embedding and index generation process...\n")
     
     chunks = load_chunks()
     
@@ -232,7 +284,8 @@ if __name__ == "__main__":
         print("No chunks found. Exiting.")
         exit(1)
     
-    # Build both indexes
+    # Build all indexes
+    success_bm25 = build_bm25_index(chunks)
     success_a = build_index_openai(chunks)
     success_b = build_index_bge(chunks)
     
@@ -240,11 +293,16 @@ if __name__ == "__main__":
     print("="*60)
     print("SUMMARY")
     print("="*60)
+    print(f"BM25 Index:       {'✓ Success' if success_bm25 else '✗ Failed'}")
     print(f"Index A (OpenAI): {'✓ Success' if success_a else '✗ Failed'}")
     print(f"Index B (BGE-M3): {'✓ Success' if success_b else '✗ Failed'}")
     
-    if success_a and success_b:
-        print("\n✓ Embedding generation completed successfully!")
+    if success_bm25 and success_a and success_b:
+        print("\n✓ All indices created successfully!")
     else:
         print("\n⚠ Some indexes failed to create. Check errors above.")
         exit(1)
+
+
+if __name__ == "__main__":
+    main()
