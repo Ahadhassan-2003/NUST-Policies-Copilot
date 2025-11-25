@@ -101,3 +101,6 @@ langchain_huggingface
 sentence_transformers
 langchain_chroma
 rank_bm25
+huggingface_hub[hf_xet]
+hf_xet
+langchain_ollama
