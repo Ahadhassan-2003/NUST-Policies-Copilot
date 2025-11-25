@@ -80,6 +80,10 @@ def extract_main_content(html: str, url: str) -> Dict[str, any]:
     if not section_title:
         section_title = "Untitled"
     
+    # Override section title for BSCS 2025 curriculum page
+    if 'seecs.nust.edu.pk/program' in url and '2025' in url:
+        section_title = "BSCS 2025 Curriculum - Bachelor of Science in Computer Science"
+    
     for elem in soup.find_all(class_=re.compile(r'(breadcrumb|quick-nav|sidebar|widget)', re.I)):
         elem.decompose()
     
@@ -96,7 +100,7 @@ def extract_main_content(html: str, url: str) -> Dict[str, any]:
     if 'seecs.nust.edu.pk/contact' in url:
         text_content = extract_contact_info(main_content)
     elif 'seecs.nust.edu.pk/program' in url:
-        text_content = extract_curriculum_info(main_content)
+        text_content = extract_curriculum_info(main_content, url)
     else:
         for a_tag in main_content.find_all('a', href=True):
             href = a_tag['href']
@@ -152,8 +156,16 @@ def extract_contact_info(content) -> str:
 
 
 @traceable(name="extract_curriculum_info")
-def extract_curriculum_info(content) -> str:
+def extract_curriculum_info(content, url: str) -> str:
     output = []
+    
+    # Add contextual header for better retrieval
+    is_bscs_2025 = 'seecs.nust.edu.pk/program' in url and '2025' in url
+    
+    if is_bscs_2025:
+        output.append("Bachelor of Science in Computer Science (BSCS) 2025 Curriculum")
+        output.append("Program offered by School of Electrical Engineering and Computer Science (SEECS), NUST")
+        output.append('')
     
     program_heading = content.find('h1', class_='program-heading')
     if program_heading:
@@ -176,14 +188,24 @@ def extract_curriculum_info(content) -> str:
         
         tables = curriculum_section.find_all('table', class_='table')
         
-        for table in tables:
+        for table_idx, table in enumerate(tables):
             thead = table.find('thead')
+            current_semester = None
+            
             if thead:
                 header_rows = thead.find_all('tr')
                 for row in header_rows:
                     cells = row.find_all(['th', 'td'])
                     if len(cells) == 1 and 'Semester' in cells[0].get_text():
-                        output.append(f"\n{cells[0].get_text(strip=True)}")
+                        current_semester = cells[0].get_text(strip=True)
+                        
+                        # Add retrieval-friendly context
+                        if is_bscs_2025:
+                            output.append(f"\nBSCS 2025 - {current_semester}")
+                            output.append(f"This semester is part of the Bachelor of Science in Computer Science curriculum for the 2025 batch at SEECS NUST.")
+                        else:
+                            output.append(f"\n{current_semester}")
+                        
                         output.append('-' * 50)
                     elif len(cells) > 1:
                         headers = [cell.get_text(strip=True) for cell in cells]
@@ -193,6 +215,8 @@ def extract_curriculum_info(content) -> str:
             tbody = table.find('tbody')
             if tbody:
                 rows = tbody.find_all('tr')
+                courses_in_semester = []
+                
                 for row in rows:
                     cells = row.find_all(['td', 'th'])
                     cell_texts = []
@@ -208,9 +232,32 @@ def extract_curriculum_info(content) -> str:
                         
                         cell_texts.append(cell_text)
                     
-                    output.append(' | '.join(cell_texts))
+                    if cell_texts:
+                        # Store course info for summary
+                        if len(cell_texts) >= 2:
+                            course_code = cell_texts[0] if len(cell_texts) > 0 else ""
+                            course_name = cell_texts[1] if len(cell_texts) > 1 else ""
+                            if course_code and course_name:
+                                courses_in_semester.append((course_code, course_name))
+                        
+                        output.append(' | '.join(cell_texts))
+                
+                # Add retrieval-friendly summary after each semester
+                if is_bscs_2025 and courses_in_semester and current_semester:
+                    output.append('')
+                    output.append(f"Summary: {current_semester} includes the following courses:")
+                    for course_code, course_name in courses_in_semester[:5]:  # First 5 courses
+                        output.append(f"- {course_code}: {course_name}")
+                    if len(courses_in_semester) > 5:
+                        output.append(f"...and {len(courses_in_semester) - 5} more courses")
             
             output.append('')
+    
+    # Add footer context for better retrieval
+    if is_bscs_2025:
+        output.append('')
+        output.append("This is the complete course curriculum for the BSCS 2025 program at NUST SEECS.")
+        output.append("For questions about BSCS courses, semester structure, credit hours, or course codes, refer to this curriculum.")
     
     return '\n'.join(output)
 
@@ -244,16 +291,31 @@ def chunk_text(docs: List[Dict]) -> List[Dict]:
     
     for doc in docs:
         text = doc['text']
+        url = doc['URL']
+        
+        # For BSCS 2025 curriculum, add contextual prefix to each chunk
+        is_bscs_2025 = 'seecs.nust.edu.pk/program' in url and '2025' in url
+        
         splits = splitter.split_text(text)
         
-        for split in splits:
+        for split_idx, split in enumerate(splits):
+            chunk_text = split
+            
+            # Add context to curriculum chunks for better retrieval
+            if is_bscs_2025 and split_idx > 0:
+                # Check if this chunk contains course information
+                if '|' in split or 'Semester' in split:
+                    # Add minimal context prefix if not already present
+                    if not split.startswith('BSCS 2025'):
+                        chunk_text = f"BSCS 2025 Curriculum - SEECS NUST:\n{split}"
+            
             chunk = {
                 'doc_id': doc['doc_id'],
                 'section': doc['section'],
                 'page': 1,
                 'URL': doc['URL'],
                 'year': doc['year'],
-                'text': split
+                'text': chunk_text
             }
             chunks.append(chunk)
     
