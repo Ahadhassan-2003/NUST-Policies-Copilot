@@ -2,14 +2,16 @@
 
 import os
 import re
-from typing import List, Dict, Any, Optional
+import sqlite3
+from typing import List, Dict, Any, Optional, Annotated
 from datetime import datetime
 from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from langgraph.checkpoint.sqlite import SqliteSaver
 from typing_extensions import TypedDict
 import langsmith
 from dotenv import load_dotenv
@@ -92,47 +94,13 @@ Abstain and provide guidance if:
 Remember: Your primary goal is accuracy and helpfulness. When in doubt, abstain and guide users to authoritative sources rather than providing potentially incorrect information.
 """
 
-# ========= CITATION VERIFICATION PROMPT ========= #
-CITATION_VERIFICATION_PROMPT = """You are a citation verification specialist. Your job is to verify that each citation in the answer is properly supported by the source document.
-
-# TASK
-Review the answer and check if each citation [N] is actually supported by the corresponding source document.
-
-# ANSWER TO VERIFY
-{answer}
-
-# SOURCE DOCUMENTS
-{sources}
-
-# VERIFICATION RULES
-1. Each claim with citation [N] must be directly supported by source N
-2. The source must explicitly state or clearly imply the claim
-3. Paraphrasing is acceptable, but the meaning must match
-4. If a citation is unsupported, mark it as INVALID
-
-# OUTPUT FORMAT
-Provide a JSON-like response:
-{{
-  "valid_citations": [1, 2, ...],
-  "invalid_citations": [3, 4, ...],
-  "issues": ["Citation [3] claims X but source says Y", ...],
-  "verification_passed": true/false
-}}
-
-If verification_passed is false, the answer needs regeneration or the invalid citations must be removed.
-"""
-
 # ========= STATE DEFINITION ========= #
-class GenerationState(TypedDict):
-    query: str
-    context: List[Dict[str, Any]]
+class ChatbotState(TypedDict):
+    messages: Annotated[List[BaseMessage], add_messages]
+    context: Optional[List[Dict[str, Any]]]
     strict_mode: bool
-    chat_history: List[Dict[str, str]]
-    answer: Optional[str]
-    citations_verified: bool
-    verification_result: Optional[Dict]
-    final_answer: str
-    see_also: List[Dict[str, str]]
+    query: Optional[str]
+    retrieved: bool
 
 # ========= HELPER FUNCTIONS ========= #
 def get_current_academic_year() -> str:
@@ -149,6 +117,9 @@ def get_current_academic_year() -> str:
 
 def format_context_for_prompt(context: List[Dict[str, Any]]) -> str:
     """Format retrieved context documents for the prompt."""
+    if not context:
+        return "No context documents available."
+    
     formatted = []
     for i, doc in enumerate(context, 1):
         metadata = doc.get('metadata', {})
@@ -184,7 +155,6 @@ def check_document_freshness(context: List[Dict[str, Any]], current_year: str) -
         
         if doc_year:
             try:
-                # Extract year from formats like "2021-22" or "2021"
                 doc_year_int = int(str(doc_year).split('-')[0])
                 age = current_year_int - doc_year_int
                 
@@ -205,7 +175,7 @@ def generate_see_also(context: List[Dict[str, Any]], used_citations: List[int]) 
     see_also = []
     
     for i, doc in enumerate(context, 1):
-        if i not in used_citations and i <= 5:  # Top 5 unused docs
+        if i not in used_citations and i <= 5:
             metadata = doc.get('metadata', {})
             see_also.append({
                 'title': metadata.get('doc_id', metadata.get('source', f'Document {i}')),
@@ -213,12 +183,12 @@ def generate_see_also(context: List[Dict[str, Any]], used_citations: List[int]) 
                 'citation_num': str(i)
             })
     
-    return see_also[:3]  # Max 3 see-also links
+    return see_also[:3]
 
 # ========= LANGGRAPH NODES ========= #
-@langsmith.traceable(name="generate_answer_node")
-def generate_answer_node(state: GenerationState) -> GenerationState:
-    """Generate initial answer with citations."""
+@langsmith.traceable(name="chat_node")
+def chat_node(state: ChatbotState):
+    """Main chat node that generates responses with citations."""
     
     # Initialize LLM
     llm = ChatOllama(
@@ -226,206 +196,175 @@ def generate_answer_node(state: GenerationState) -> GenerationState:
         temperature=0.1,
         num_predict=1024
     )
-    # llm = ChatOpenAI(
-    #     model="gpt-4o-mini",
-    # )
+    
+    # Get context and settings
+    context = state.get('context', [])
+    strict_mode = state.get('strict_mode', False)
     
     # Format context
-    context_text = format_context_for_prompt(state['context'])
+    context_text = format_context_for_prompt(context)
     current_year = get_current_academic_year()
     
     # Check for outdated documents
-    outdated_docs = check_document_freshness(state['context'], current_year)
+    outdated_docs = check_document_freshness(context, current_year) if context else []
     outdated_warning = ""
-    if outdated_docs and state['strict_mode']:
+    if outdated_docs and strict_mode:
         outdated_warning = "\n\n**IMPORTANT**: Some sources are outdated:\n"
         for doc in outdated_docs:
             outdated_warning += f"- [{doc['citation_num']}] {doc['doc_id']} (from {doc['year']}, {doc['age']} years old)\n"
     
-    # Build prompt
-    system_msg = SYSTEM_PROMPT.format(
+    # Build system message
+    system_msg_content = SYSTEM_PROMPT.format(
         current_date=datetime.now().strftime("%B %d, %Y"),
         current_academic_year=current_year
     )
     
-    if state['strict_mode']:
-        system_msg += "\n\n**STRICT MODE ACTIVE**: Be extra cautious with citations and abstain if any doubt exists."
+    if strict_mode:
+        system_msg_content += "\n\n**STRICT MODE ACTIVE**: Be extra cautious with citations and abstain if any doubt exists."
     
-    # Create prompt template
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", system_msg),
-        ("human", """# CONTEXT DOCUMENTS
-{context}
-
-# QUESTION
-{question}
-
-# INSTRUCTIONS
-Provide a concise, well-cited answer. Remember:
-1. Every claim needs a citation [N]
-2. Be concise (2-4 sentences typically)
-3. Warn about outdated information
-4. Abstain if evidence is insufficient
-
-Answer:""")
-    ])
-    
-    # Generate answer
-    chain = prompt | llm | StrOutputParser()
-    
-    answer = chain.invoke({
-        "context": context_text + outdated_warning,
-        "question": state['query']
-    })
-    
-    state['answer'] = answer
-    return state
-
-@langsmith.traceable(name="verify_citations_node")
-def verify_citations_node(state: GenerationState) -> GenerationState:
-    """Verify that citations are properly supported."""
-    
-    if not state['strict_mode']:
-        # Skip verification in non-strict mode
-        state['citations_verified'] = True
-        state['verification_result'] = {"verification_passed": True}
-        return state
-    
-    # Extract citations from answer
-    citations = extract_citations(state['answer'])
-    
-    if not citations:
-        # No citations - this is a problem if we have context
-        if state['context']:
-            state['citations_verified'] = False
-            state['verification_result'] = {
-                "verification_passed": False,
-                "issues": ["Answer contains no citations despite having source documents"]
-            }
-        else:
-            state['citations_verified'] = True
-            state['verification_result'] = {"verification_passed": True}
-        return state
-    
-    # For now, do basic validation (can be enhanced with LLM-based verification)
-    max_citation = max(citations)
-    num_sources = len(state['context'])
-    
-    if max_citation > num_sources:
-        state['citations_verified'] = False
-        state['verification_result'] = {
-            "verification_passed": False,
-            "issues": [f"Citation [{max_citation}] exceeds available sources ({num_sources})"]
-        }
+    # Add context to system message if available
+    if context:
+        system_msg_content += f"\n\n# CONTEXT DOCUMENTS\n{context_text}{outdated_warning}"
     else:
-        state['citations_verified'] = True
-        state['verification_result'] = {"verification_passed": True}
+        system_msg_content += "\n\n# NO CONTEXT AVAILABLE\nNo relevant documents were found. Politely inform the user and suggest alternative ways to find the information."
     
-    return state
-
-@langsmith.traceable(name="finalize_answer_node")
-def finalize_answer_node(state: GenerationState) -> GenerationState:
-    """Finalize answer with see-also links."""
+    # Prepare messages for LLM
+    messages = [SystemMessage(content=system_msg_content)] + state['messages']
     
-    if not state['citations_verified']:
-        # Provide abstention message
-        state['final_answer'] = """I apologize, but I cannot provide a fully verified answer based on the available documents. 
-
-To get accurate information, I recommend:
-- Contacting the relevant NUST department directly
-- Visiting the official NUST website
-- Checking the latest student handbook
-
-Please let me know if you'd like me to try rephrasing your question or searching for different information."""
-        state['see_also'] = []
-        return state
+    # Generate response
+    response = llm.invoke(messages)
     
-    # Extract used citations
-    used_citations = extract_citations(state['answer'])
-    
-    # Generate see-also links
-    see_also = generate_see_also(state['context'], used_citations)
-    
-    # Format final answer
-    final_answer = state['answer']
-    
-    if see_also:
-        final_answer += "\n\n**See Also:**\n"
-        for item in see_also:
-            section_text = f" - {item['section']}" if item['section'] else ""
-            final_answer += f"- [{item['citation_num']}] {item['title']}{section_text}\n"
-    
-    state['final_answer'] = final_answer
-    state['see_also'] = see_also
-    
-    return state
+    return {
+        "messages": [response]
+    }
 
 # ========= BUILD GRAPH ========= #
-def build_generation_graph():
-    """Build the LangGraph generation workflow."""
+def build_chatbot_graph(checkpointer=None):
+    """Build the LangGraph chatbot workflow."""
     
-    workflow = StateGraph(GenerationState)
+    workflow = StateGraph(ChatbotState)
     
     # Add nodes
-    workflow.add_node("generate", generate_answer_node)
-    workflow.add_node("verify", verify_citations_node)
-    workflow.add_node("finalize", finalize_answer_node)
+    workflow.add_node("chat_node", chat_node)
     
     # Add edges
-    workflow.set_entry_point("generate")
-    workflow.add_edge("generate", "verify")
-    workflow.add_edge("verify", "finalize")
-    workflow.add_edge("finalize", END)
+    workflow.add_edge(START, "chat_node")
+    workflow.add_edge("chat_node", END)
     
-    return workflow.compile()
+    # Compile with checkpointer for memory
+    return workflow.compile(checkpointer=checkpointer)
+
+# ========= DATABASE SETUP ========= #
+# Create SQLite connection and checkpointer
+conn = sqlite3.connect(database="nust_copilot.db", check_same_thread=False)
+checkpointer = SqliteSaver(conn)
+
+# Build the chatbot
+chatbot = build_chatbot_graph(checkpointer=checkpointer)
+
+# ========= THREAD MANAGEMENT ========= #
+def retrieve_all_threads():
+    """Retrieve all conversation thread IDs from the database."""
+    all_threads = set()
+    for checkpoint in checkpointer.list(None):
+        all_threads.add(checkpoint.config["configurable"]['thread_id'])
+    return list(all_threads)
 
 # ========= MAIN GENERATION FUNCTION ========= #
-@langsmith.traceable(name="generate_answer")
-def generate_answer(
+@langsmith.traceable(name="generate_answer_with_retrieval")
+def generate_answer_with_retrieval(
     query: str,
     context: List[Dict[str, Any]],
     strict_mode: bool = False,
-    chat_history: Optional[List[Dict[str, str]]] = None
+    thread_id: str = "default"
 ) -> Dict[str, Any]:
     """
-    Generate an answer with citations based on retrieved context.
+    Generate an answer with citations and manage conversation state.
     
     Args:
         query: User's question
         context: Retrieved documents from hybrid search
         strict_mode: Enable strict citation verification
-        chat_history: Previous conversation history
+        thread_id: Conversation thread identifier
     
     Returns:
         Dictionary with answer, citations, and metadata
     """
     
-    # Initialize state
-    initial_state = GenerationState(
-        query=query,
+    # Prepare initial state
+    initial_state = ChatbotState(
+        messages=[HumanMessage(content=query)],
         context=context,
         strict_mode=strict_mode,
-        chat_history=chat_history or [],
-        answer=None,
-        citations_verified=False,
-        verification_result=None,
-        final_answer="",
-        see_also=[]
+        query=query,
+        retrieved=True
     )
     
-    # Build and run graph
-    graph = build_generation_graph()
-    final_state = graph.invoke(initial_state)
+    # Configure for thread
+    config = {"configurable": {"thread_id": thread_id}}
     
-    # Return result
+    # Invoke chatbot
+    result = chatbot.invoke(initial_state, config=config)
+    
+    # Extract answer
+    answer = result['messages'][-1].content if result['messages'] else "No response generated."
+    
+    # Extract citations
+    citations = extract_citations(answer)
+    
+    # Generate see-also
+    see_also = generate_see_also(context, citations) if context else []
+    
+    # Add see-also to answer if available
+    if see_also:
+        answer += "\n\n**See Also:**\n"
+        for item in see_also:
+            section_text = f" - {item['section']}" if item['section'] else ""
+            answer += f"- [{item['citation_num']}] {item['title']}{section_text}\n"
+    
     return {
-        "answer": final_state['final_answer'],
-        "citations": extract_citations(final_state.get('answer', '')),
-        "sources": final_state['context'],
-        "see_also": final_state['see_also'],
-        "verification_passed": final_state['citations_verified'],
-        "verification_details": final_state.get('verification_result', {})
+        "answer": answer,
+        "citations": citations,
+        "sources": context,
+        "see_also": see_also,
+        "thread_id": thread_id
     }
+
+# ========= STREAMING SUPPORT ========= #
+def stream_chatbot_response(query: str, context: List[Dict[str, Any]], strict_mode: bool, thread_id: str):
+    """
+    Stream chatbot responses for real-time UI updates.
+    
+    Args:
+        query: User's question
+        context: Retrieved documents
+        strict_mode: Strict mode flag
+        thread_id: Thread identifier
+    
+    Yields:
+        Message chunks as they are generated
+    """
+    
+    # Prepare initial state
+    initial_state = ChatbotState(
+        messages=[HumanMessage(content=query)],
+        context=context,
+        strict_mode=strict_mode,
+        query=query,
+        retrieved=True
+    )
+    
+    # Configure for thread
+    config = {"configurable": {"thread_id": thread_id}}
+    
+    # Stream response
+    for message_chunk, metadata in chatbot.stream(
+        initial_state,
+        config=config,
+        stream_mode='messages'
+    ):
+        if isinstance(message_chunk, AIMessage):
+            yield message_chunk.content
 
 # ========= TESTING ========= #
 if __name__ == "__main__":
@@ -451,10 +390,11 @@ if __name__ == "__main__":
         }
     ]
     
-    result = generate_answer(
+    result = generate_answer_with_retrieval(
         query="What is the minimum CGPA required?",
         context=sample_context,
-        strict_mode=True
+        strict_mode=True,
+        thread_id="test_thread"
     )
     
     print("="*60)
@@ -465,4 +405,4 @@ if __name__ == "__main__":
     print("METADATA:")
     print("="*60)
     print(f"Citations: {result['citations']}")
-    print(f"Verification Passed: {result['verification_passed']}")
+    print(f"Thread ID: {result['thread_id']}")
