@@ -4,14 +4,22 @@ import streamlit as st
 import sys
 from pathlib import Path
 from typing import List, Dict
-import json
-import re
+import uuid
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.runnables import RunnableConfig
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent))
 
 from hybrid_retriever import load_chunks, load_vector_indices, load_bm25_index, hybrid_search
-from generation_module import generate_answer, get_current_academic_year
+from generation_module import (
+    chatbot, 
+    retrieve_all_threads, 
+    get_current_academic_year,
+    ChatbotState,
+    generate_see_also,
+    extract_citations
+)
 
 # ========= PAGE CONFIG ========= #
 st.set_page_config(
@@ -24,12 +32,10 @@ st.set_page_config(
 # ========= CUSTOM CSS ========= #
 st.markdown("""
 <style>
-    /* Main container */
     .main {
         padding-top: 2rem;
     }
     
-    /* Citation styling */
     .citation {
         background-color: #e3f2fd;
         padding: 2px 6px;
@@ -44,7 +50,6 @@ st.markdown("""
         background-color: #bbdefb;
     }
     
-    /* Source card */
     .source-card {
         background-color: #f5f5f5;
         padding: 1rem;
@@ -71,81 +76,78 @@ st.markdown("""
         color: #333;
     }
     
-    /* Warning styling */
-    .warning-box {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-        padding: 1rem;
+    .thread-button {
+        width: 100%;
+        text-align: left;
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        border: 1px solid #ddd;
         border-radius: 4px;
-        margin: 1rem 0;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        transition: background-color 0.2s;
     }
     
-    /* Info styling */
-    .info-box {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196f3;
-        padding: 1rem;
-        border-radius: 4px;
-        margin: 1rem 0;
+    .thread-button:hover {
+        background-color: #e9ecef;
     }
     
-    /* Chat message */
-    .user-message {
-        background-color: black;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-    }
-    
-    .assistant-message {
-        background-color: black;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
+    .thread-button-active {
+        background-color: #d4edda;
+        border-color: #28a745;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ========= SESSION STATE INITIALIZATION ========= #
-if 'chat_history' not in st.session_state:
-    st.session_state.chat_history = []
+# ========= UTILITY FUNCTIONS ========= #
+def generate_thread_id():
+    """Generate a new unique thread ID."""
+    return str(uuid.uuid4())
 
-if 'indices_loaded' not in st.session_state:
-    st.session_state.indices_loaded = False
+def reset_chat():
+    """Start a new chat thread."""
+    thread_id = generate_thread_id()
+    st.session_state['thread_id'] = thread_id
+    add_thread(st.session_state['thread_id'])
+    st.session_state['message_history'] = []
+    st.session_state['current_sources'] = []
 
-if 'openai_vs' not in st.session_state:
-    st.session_state.openai_vs = None
+def add_thread(thread_id):
+    """Add a new thread to the list if it doesn't exist."""
+    if thread_id not in st.session_state['chat_threads']:
+        st.session_state['chat_threads'].append(thread_id)
 
-if 'bge_vs' not in st.session_state:
-    st.session_state.bge_vs = None
+def load_conversation(thread_id: str):
+    """Load conversation history from a specific thread."""
+    try:
+        state = chatbot.get_state(config={"configurable": {"thread_id": thread_id}})
+        messages = state.values.get('messages', [])
+        
+        # Convert LangChain messages to streamlit format
+        temp_history = []
+        for msg in messages:
+            if isinstance(msg, HumanMessage):
+                temp_history.append({"role": "user", "content": msg.content})
+            elif isinstance(msg, AIMessage):
+                temp_history.append({"role": "assistant", "content": msg.content})
+        
+        return temp_history
+    except Exception as e:
+        print(f"Error loading conversation: {e}")
+        return []
 
-if 'bm25_retriever' not in st.session_state:
-    st.session_state.bm25_retriever = None
-
-if 'chunks' not in st.session_state:
-    st.session_state.chunks = None
-
-if 'current_sources' not in st.session_state:
-    st.session_state.current_sources = []
-
-# ========= HELPER FUNCTIONS ========= #
-@st.cache_resource
-def load_all_indices():
-    """Load indices once and cache them."""
-    chunks = load_chunks()
-    openai_vs, bge_vs = load_vector_indices()
-    bm25_retriever = load_bm25_index()
-    return chunks, openai_vs, bge_vs, bm25_retriever
-
-def make_citations_clickable(text: str) -> str:
-    """Convert [N] citations to clickable elements."""
-    pattern = r'\[(\d+)\]'
-    
-    def replacement(match):
-        num = match.group(1)
-        return f'<span class="citation" onclick="scrollToCitation({num})">[{num}]</span>'
-    
-    return re.sub(pattern, replacement, text)
+def get_thread_preview(thread_id: str, max_length: int = 50) -> str:
+    """Get a preview of the thread's first message."""
+    try:
+        messages = load_conversation(thread_id)
+        if messages and len(messages) > 0:
+            first_msg = messages[0]['content']
+            if len(first_msg) > max_length:
+                return first_msg[:max_length] + "..."
+            return first_msg
+        return str(thread_id)[:8]
+    except:
+        return str(thread_id)[:8]
 
 def display_source_card(source: Dict, index: int):
     """Display a source document card."""
@@ -167,57 +169,104 @@ def display_source_card(source: Dict, index: int):
             st.markdown(f"**Type:** {source_type.upper()}")
         
         st.markdown("---")
-        st.markdown(f"**Content:**")
+        st.markdown("**Content:**")
         st.markdown(f"<div class='source-text'>{text[:500]}{'...' if len(text) > 500 else ''}</div>", 
                    unsafe_allow_html=True)
 
-def display_chat_message(role: str, content: str, sources: List[Dict] = None):
-    """Display a chat message with optional sources."""
-    if role == "user":
-        st.markdown(f"""
-        <div class='user-message'>
-            <strong>🧑 You:</strong><br>
-            {content}
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-        <div class='assistant-message'>
-            <strong>🤖 Assistant:</strong><br>
-            {content}
-        </div>
-        """, unsafe_allow_html=True)
-        
-        if sources:
-            with st.expander("📚 View Sources", expanded=False):
-                for i, source in enumerate(sources, 1):
-                    display_source_card(source, i)
+# ========= SESSION STATE INITIALIZATION ========= #
+if 'message_history' not in st.session_state:
+    st.session_state['message_history'] = []
+
+if 'thread_id' not in st.session_state:
+    st.session_state['thread_id'] = generate_thread_id()
+
+if 'chat_threads' not in st.session_state:
+    st.session_state['chat_threads'] = retrieve_all_threads()
+
+if 'indices_loaded' not in st.session_state:
+    st.session_state['indices_loaded'] = False
+
+if 'openai_vs' not in st.session_state:
+    st.session_state['openai_vs'] = None
+
+if 'bge_vs' not in st.session_state:
+    st.session_state['bge_vs'] = None
+
+if 'bm25_retriever' not in st.session_state:
+    st.session_state['bm25_retriever'] = None
+
+if 'chunks' not in st.session_state:
+    st.session_state['chunks'] = None
+
+if 'current_sources' not in st.session_state:
+    st.session_state['current_sources'] = []
+
+if 'strict_mode' not in st.session_state:
+    st.session_state['strict_mode'] = False
+
+# Add current thread to list
+add_thread(st.session_state['thread_id'])
+
+# ========= LOAD INDICES ========= #
+@st.cache_resource
+def load_all_indices():
+    """Load indices once and cache them."""
+    chunks = load_chunks()
+    openai_vs, bge_vs = load_vector_indices()
+    bm25_retriever = load_bm25_index()
+    return chunks, openai_vs, bge_vs, bm25_retriever
 
 # ========= SIDEBAR ========= #
 with st.sidebar:
-    st.title("⚙️ Settings")
+    st.title("🎓 NUST Copilot")
+    
+    # New Chat Button
+    if st.button("➕ New Chat", use_container_width=True, type="primary"):
+        reset_chat()
+        st.rerun()
+    
+    st.divider()
+    
+    # Settings Section
+    st.subheader("⚙️ Settings")
     
     # Strict Mode Toggle
     strict_mode = st.toggle(
         "🔒 Strict Mode",
-        value=False,
+        value=st.session_state.get('strict_mode', False),
         help="Enable aggressive citation checking and abstention when evidence is weak"
     )
+    st.session_state['strict_mode'] = strict_mode
     
     if strict_mode:
-        st.info("""
-        **Strict Mode Active:**
-        - Stronger evidence required
-        - More aggressive abstention
-        - Citation verification enabled
-        - Outdated warnings prominent
-        """)
+        st.info("**Strict Mode:** Stronger evidence required, more aggressive abstention")
+    
+    # Retrieval Settings
+    num_results = st.slider("Number of sources", 3, 15, 10)
     
     st.divider()
     
-    # Retrieval Settings
-    st.subheader("🔍 Retrieval Settings")
-    num_results = st.slider("Number of sources to retrieve", 3, 15, 10)
+    # Chat History Section
+    st.subheader("💬 My Chats")
+    
+    # Display chat threads
+    for thread_id in st.session_state['chat_threads']:
+        is_active = thread_id == st.session_state['thread_id']
+        preview = get_thread_preview(thread_id)
+        
+        button_label = f"{'🟢 ' if is_active else '⚪ '}{preview}"
+        
+        if st.button(
+            button_label,
+            key=f"thread_{thread_id}",
+            use_container_width=True,
+            type="secondary" if is_active else "tertiary"
+        ):
+            if thread_id != st.session_state['thread_id']:
+                st.session_state['thread_id'] = thread_id
+                st.session_state['message_history'] = load_conversation(thread_id)
+                st.session_state['current_sources'] = []
+                st.rerun()
     
     st.divider()
     
@@ -227,16 +276,8 @@ with st.sidebar:
     **Current Academic Year:**  
     {current_year}
     
-    **Note:** System prioritizes most recent policies.
+    Prioritizing most recent policies.
     """)
-    
-    st.divider()
-    
-    # Clear Chat
-    if st.button("🗑️ Clear Chat History", use_container_width=True):
-        st.session_state.chat_history = []
-        st.session_state.current_sources = []
-        st.rerun()
     
     st.divider()
     
@@ -245,15 +286,16 @@ with st.sidebar:
         st.markdown("""
         **NUST Policies Copilot**
         
-        An AI assistant for navigating NUST university policies.
+        AI assistant for navigating NUST policies.
         
         **Features:**
-        - Evidence-based answers with citations
+        - Evidence-based answers
+        - Inline citations
         - Source verification
-        - Temporal awareness
-        - Abstention when uncertain
+        - Multi-turn conversations
+        - Persistent chat history
         
-        **Disclaimer:** Always verify critical information with official NUST offices.
+        **Disclaimer:** Verify critical information with official NUST offices.
         """)
 
 # ========= MAIN APP ========= #
@@ -261,92 +303,118 @@ st.title("🎓 NUST Policies Copilot")
 st.markdown("Ask me anything about NUST policies, procedures, and regulations.")
 
 # Load indices on first run
-if not st.session_state.indices_loaded:
+if not st.session_state['indices_loaded']:
     with st.spinner("🔄 Loading knowledge base..."):
         try:
             chunks, openai_vs, bge_vs, bm25_retriever = load_all_indices()
-            st.session_state.chunks = chunks
-            st.session_state.openai_vs = openai_vs
-            st.session_state.bge_vs = bge_vs
-            st.session_state.bm25_retriever = bm25_retriever
-            st.session_state.indices_loaded = True
-            st.success("✅ Knowledge base loaded successfully!")
+            st.session_state['chunks'] = chunks
+            st.session_state['openai_vs'] = openai_vs
+            st.session_state['bge_vs'] = bge_vs
+            st.session_state['bm25_retriever'] = bm25_retriever
+            st.session_state['indices_loaded'] = True
+            st.success("✅ Knowledge base loaded!")
         except Exception as e:
             st.error(f"❌ Error loading knowledge base: {e}")
             st.stop()
 
 # Display chat history
-for message in st.session_state.chat_history:
-    display_chat_message(
-        message['role'],
-        message['content'],
-        message.get('sources')
-    )
+for message in st.session_state['message_history']:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
+        
+        # Display sources if available and it's an assistant message
+        if message["role"] == "assistant" and message.get("sources"):
+            with st.expander("📚 View Sources", expanded=False):
+                for i, source in enumerate(message["sources"], 1):
+                    display_source_card(source, i)
 
 # Chat input
-query = st.chat_input("Ask a question about NUST policies...")
+user_input = st.chat_input("Type your question here...")
 
-if query:
-    # Add user message to chat
-    st.session_state.chat_history.append({
-        'role': 'user',
-        'content': query
+if user_input:
+    # Add user message to history
+    st.session_state['message_history'].append({
+        "role": "user",
+        "content": user_input
     })
     
     # Display user message
-    display_chat_message('user', query)
+    with st.chat_message("user"):
+        st.write(user_input)
     
     # Retrieve relevant documents
     with st.spinner("🔍 Searching knowledge base..."):
         try:
             retrieved_docs = hybrid_search(
-                query=query,
-                openai_vs=st.session_state.openai_vs,
-                bge_vs=st.session_state.bge_vs,
-                bm25_retriever=st.session_state.bm25_retriever,
+                query=user_input,
+                openai_vs=st.session_state['openai_vs'],
+                bge_vs=st.session_state['bge_vs'],
+                bm25_retriever=st.session_state['bm25_retriever'],
                 k=num_results
             )
+            st.session_state['current_sources'] = retrieved_docs
         except Exception as e:
             st.error(f"❌ Error during retrieval: {e}")
             st.stop()
     
-    # Generate answer
-    with st.spinner("💭 Generating answer..."):
-        try:
-            result = generate_answer(
-                query=query,
-                context=retrieved_docs,
-                strict_mode=strict_mode,
-                chat_history=[
-                    {'role': msg['role'], 'content': msg['content']}
-                    for msg in st.session_state.chat_history[:-1]
-                ]
-            )
-            
-            answer = result['answer']
-            sources = result['sources']
-            verification_passed = result['verification_passed']
-            
-            # Add assistant message to chat
-            st.session_state.chat_history.append({
-                'role': 'assistant',
-                'content': answer,
-                'sources': sources,
-                'verification_passed': verification_passed
-            })
-            
-            st.session_state.current_sources = sources
-            
-            # Display assistant message
-            display_chat_message('assistant', answer, sources)
-            
-            # Display verification warning if needed
-            if strict_mode and not verification_passed:
-                st.warning("⚠️ Citation verification failed. Answer may be incomplete or abstained.")
-            
-        except Exception as e:
-            st.error(f"❌ Error during generation: {e}")
-            st.stop()
+    # Generate streaming response
+    with st.chat_message("assistant"):
+        # Prepare state for chatbot
+        initial_state = ChatbotState(
+            messages=[HumanMessage(content=user_input)],
+            context=retrieved_docs,
+            strict_mode=st.session_state['strict_mode'],
+            query=user_input,
+            retrieved=True
+        )
+        
+        # Configure thread
+        CONFIG = RunnableConfig({
+            "configurable": {"thread_id": st.session_state['thread_id']},
+            "metadata": {
+                "thread_id": st.session_state['thread_id'],
+                "strict_mode": st.session_state['strict_mode']
+            },
+            "run_name": "policy_query"
+        })
+        
+        # Stream response (AI messages only)
+        def ai_only_stream():
+            for message_chunk, metadata in chatbot.stream(
+                initial_state,
+                config=CONFIG,
+                stream_mode='messages'
+            ):
+                if isinstance(message_chunk, AIMessage) and message_chunk.content:
+                    yield message_chunk.content
+        
+        # Display streaming response
+        ai_message = st.write_stream(ai_only_stream())
+        
+        # Add see-also section if applicable
+        citations = extract_citations(ai_message)
+        see_also = generate_see_also(retrieved_docs, citations) if retrieved_docs else []
+        
+        if see_also:
+            see_also_text = "\n\n**See Also:**\n"
+            for item in see_also:
+                section_text = f" - {item['section']}" if item['section'] else ""
+                see_also_text += f"- [{item['citation_num']}] {item['title']}{section_text}\n"
+            st.markdown(see_also_text)
+            ai_message += see_also_text
+        
+        # Display sources
+        if retrieved_docs:
+            with st.expander("📚 View Sources", expanded=False):
+                for i, source in enumerate(retrieved_docs, 1):
+                    display_source_card(source, i)
+    
+    # Add assistant message to history
+    st.session_state['message_history'].append({
+        "role": "assistant",
+        "content": ai_message,
+        "sources": retrieved_docs
+    })
 
 # ========= FOOTER ========= #
 st.divider()
@@ -355,5 +423,6 @@ st.markdown("""
     <p><strong>Disclaimer:</strong> This is an AI assistant and may make mistakes. 
     Always verify important information with official NUST offices and the latest published policies.</p>
     <p>For critical matters, contact the relevant department directly.</p>
+    <p style='margin-top: 1rem; font-size: 0.75rem;'>Thread ID: {}</p>
 </div>
-""", unsafe_allow_html=True)
+""".format(st.session_state['thread_id'][:8]), unsafe_allow_html=True)
