@@ -392,7 +392,7 @@ if user_input:
         ai_message = st.write_stream(ai_only_stream())
         
         # Add see-also section if applicable
-        citations = extract_citations(ai_message)
+        citations = extract_citations(ai_message) # type: ignore
         see_also = generate_see_also(retrieved_docs, citations) if retrieved_docs else []
         
         if see_also:

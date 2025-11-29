@@ -299,13 +299,13 @@ Unsupported claims: [list any claims not found in sources, or "None"]"""
         response_text = response.content if hasattr(response, 'content') else str(response)
         
         # Parse response
-        score_match = re.search(r'Score:\s*(\d+)', response_text)
+        score_match = re.search(r'Score:\s*(\d+)', response_text) # type: ignore
         score = int(score_match.group(1)) / 10 if score_match else 0.5
         
-        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text)
+        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text) # type: ignore
         reasoning = reasoning_match.group(1).strip() if reasoning_match else ""
         
-        unsupported_match = re.search(r'Unsupported claims:\s*(.+?)(?:\n\n|$)', response_text, re.DOTALL)
+        unsupported_match = re.search(r'Unsupported claims:\s*(.+?)(?:\n\n|$)', response_text, re.DOTALL) # type: ignore
         unsupported = unsupported_match.group(1).strip() if unsupported_match else ""
         
         return {
