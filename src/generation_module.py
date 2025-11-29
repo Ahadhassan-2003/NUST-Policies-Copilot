@@ -246,7 +246,7 @@ def chat_node(state: ChatbotState):
     strict_mode = state.get('strict_mode', False)
     
     # Format context
-    context_text = format_context_for_prompt(context)
+    context_text = format_context_for_prompt(context) # type: ignore
     current_year = get_current_academic_year()
     
     # Check for outdated documents
@@ -311,7 +311,7 @@ def retrieve_all_threads():
     """Retrieve all conversation thread IDs from the database."""
     all_threads = set()
     for checkpoint in checkpointer.list(None):
-        all_threads.add(checkpoint.config["configurable"]['thread_id'])
+        all_threads.add(checkpoint.config["configurable"]['thread_id']) # type: ignore
     return list(all_threads)
 
 # ========= MAIN GENERATION FUNCTION ========= #
@@ -348,7 +348,7 @@ def generate_answer_with_retrieval(
     config = {"configurable": {"thread_id": thread_id}}
     
     # Invoke chatbot
-    result = chatbot.invoke(initial_state, config=config)
+    result = chatbot.invoke(initial_state, config=config) # type: ignore
     
     # Extract answer
     answer = result['messages'][-1].content if result['messages'] else "No response generated."
@@ -404,7 +404,7 @@ def stream_chatbot_response(query: str, context: List[Dict[str, Any]], strict_mo
     # Stream response
     for message_chunk, metadata in chatbot.stream(
         initial_state,
-        config=config,
+        config=config, # type: ignore
         stream_mode='messages'
     ):
         if isinstance(message_chunk, AIMessage):
