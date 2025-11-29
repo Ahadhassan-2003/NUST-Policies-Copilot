@@ -1,0 +1,523 @@
+{
+  "config": {
+    "k": 10,
+    "strict_mode": false,
+    "use_llm_faithfulness": false
+  },
+  "total_queries": 17,
+  "retrieval": {
+    "recall": {
+      "1": 0.013962385355278755,
+      "3": 0.04941828546568877,
+      "5": 0.07752539583448781,
+      "10": 0.1037332112760333
+    },
+    "ndcg": {
+      "3": 0.5,
+      "5": 0.48545727435225283,
+      "10": 0.3951700094260614
+    }
+  },
+  "generation": {
+    "total_queries": 10,
+    "citation": {
+      "citation_count_mean": 4.3,
+      "citation_count_std": 0.9,
+      "citation_coverage_mean": 0.398,
+      "citation_coverage_std": 0.105,
+      "expected_sources_recall_mean": 0.9,
+      "expected_sources_recall_std": 0.3,
+      "format_quality_mean": 1.0,
+      "format_quality_std": 0.0,
+      "page_accuracy_mean": 0.571,
+      "page_accuracy_std": 0.495
+    },
+    "faithfulness": {
+      "word_overlap_mean": 0.522,
+      "word_overlap_std": 0.12,
+      "ngram_overlap_2_mean": 0.286,
+      "ngram_overlap_2_std": 0.121,
+      "ngram_overlap_3_mean": 0.165,
+      "ngram_overlap_3_std": 0.109,
+      "faithfulness_score_mean": 0.324,
+      "faithfulness_score_std": 0.108
+    },
+    "abstention": {
+      "abstention_rate": 0.0,
+      "should_abstain_rate": 0.0,
+      "appropriate_rate": 1.0,
+      "correct_abstentions": 0,
+      "correct_answers": 10,
+      "false_abstentions": 0,
+      "false_confidence": 0
+    },
+    "answer_quality": {
+      "word_overlap_mean": 0.396
+    },
+    "latency": {
+      "retrieval_ms": {
+        "mean": 5927.61,
+        "median": 5470.09,
+        "std": 899.78,
+        "p95": 7325.58,
+        "p99": 7552.95
+      },
+      "generation_ms": {
+        "mean": 4995.65,
+        "median": 4893.15,
+        "std": 608.24,
+        "p95": 6069.43,
+        "p99": 6273.61
+      },
+      "total_ms": {
+        "mean": 10923.27,
+        "median": 10743.23,
+        "std": 1266.86,
+        "p95": 12764.87,
+        "p99": 12894.53
+      }
+    }
+  },
+  "individual_results": [
+    {
+      "query_id": "1",
+      "query": "When was NUST established and what is its primary focus?",
+      "answer_length": 736,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
+        "citation_coverage": 0.273,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 0.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 4,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.588,
+        "ngram_overlap_2": 0.471,
+        "ngram_overlap_3": 0.314,
+        "faithfulness_score": 0.458
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.737,
+        "key_terms_coverage": 0.72
+      },
+      "latency": {
+        "query_id": "1",
+        "retrieval_ms": 5176.68,
+        "generation_ms": 4305.77,
+        "total_ms": 9482.45
+      }
+    },
+    {
+      "query_id": "2",
+      "query": "What are the vision and mission statements of NUST?",
+      "answer_length": 1013,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 5,
+        "unique_citations": 5,
+        "citation_coverage": 0.417,
+        "expected_sources_found": 2,
+        "expected_sources_total": 2,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 1.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.644,
+        "ngram_overlap_2": 0.484,
+        "ngram_overlap_3": 0.385,
+        "faithfulness_score": 0.504
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.596,
+        "key_terms_coverage": 0.575
+      },
+      "latency": {
+        "query_id": "2",
+        "retrieval_ms": 6962.34,
+        "generation_ms": 4911.63,
+        "total_ms": 11873.97
+      }
+    },
+    {
+      "query_id": "3",
+      "query": "What are NUST's key rankings and achievements?",
+      "answer_length": 1344,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 6,
+        "unique_citations": 6,
+        "citation_coverage": 0.462,
+        "expected_sources_found": 0,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 0.0,
+        "page_accuracy": 1.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.552,
+        "ngram_overlap_2": 0.385,
+        "ngram_overlap_3": 0.211,
+        "faithfulness_score": 0.383
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.487,
+        "key_terms_coverage": 0.35
+      },
+      "latency": {
+        "query_id": "3",
+        "retrieval_ms": 5495.66,
+        "generation_ms": 5757.49,
+        "total_ms": 11253.16
+      }
+    },
+    {
+      "query_id": "6",
+      "query": "What is the duration and coursework requirement for PhD studies at NUST?",
+      "answer_length": 799,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 4,
+        "unique_citations": 4,
+        "citation_coverage": 0.333,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 0.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.562,
+        "ngram_overlap_2": 0.203,
+        "ngram_overlap_3": 0.073,
+        "faithfulness_score": 0.279
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.875,
+        "key_terms_coverage": 0.818
+      },
+      "latency": {
+        "query_id": "6",
+        "retrieval_ms": 5325.13,
+        "generation_ms": 4908.15,
+        "total_ms": 10233.3
+      }
+    },
+    {
+      "query_id": "9",
+      "query": "What are the evaluation stages in the Final Year Project?",
+      "answer_length": 1218,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
+        "citation_coverage": 0.3,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.375,
+        "ngram_overlap_2": 0.161,
+        "ngram_overlap_3": 0.035,
+        "faithfulness_score": 0.19
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.286,
+        "key_terms_coverage": 0.357
+      },
+      "latency": {
+        "query_id": "9",
+        "retrieval_ms": 6978.21,
+        "generation_ms": 4878.14,
+        "total_ms": 11856.36
+      }
+    },
+    {
+      "query_id": "11",
+      "query": "What documents are required for registration at SEECS NUST for PG students?",
+      "answer_length": 1188,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 5,
+        "unique_citations": 5,
+        "citation_coverage": 0.417,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 1.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.667,
+        "ngram_overlap_2": 0.304,
+        "ngram_overlap_3": 0.185,
+        "faithfulness_score": 0.385
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.222,
+        "key_terms_coverage": 0.208
+      },
+      "latency": {
+        "query_id": "11",
+        "retrieval_ms": 6242.12,
+        "generation_ms": 6324.66,
+        "total_ms": 12566.78
+      }
+    },
+    {
+      "query_id": "13",
+      "query": "What details are included in the Medical Fitness Certificate for students?",
+      "answer_length": 806,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 5,
+        "unique_citations": 5,
+        "citation_coverage": 0.625,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.396,
+        "ngram_overlap_2": 0.137,
+        "ngram_overlap_3": 0.053,
+        "faithfulness_score": 0.195
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.184,
+        "key_terms_coverage": 0.19
+      },
+      "latency": {
+        "query_id": "13",
+        "retrieval_ms": 7609.79,
+        "generation_ms": 5317.16,
+        "total_ms": 12926.95
+      }
+    },
+    {
+      "query_id": "16",
+      "query": "What are the constituent institutions of NUST?",
+      "answer_length": 789,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 4,
+        "unique_citations": 4,
+        "citation_coverage": 0.5,
+        "expected_sources_found": 2,
+        "expected_sources_total": 2,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 0.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 4,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.326,
+        "ngram_overlap_2": 0.158,
+        "ngram_overlap_3": 0.114,
+        "faithfulness_score": 0.199
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.276,
+        "key_terms_coverage": 0.312
+      },
+      "latency": {
+        "query_id": "16",
+        "retrieval_ms": 4993.42,
+        "generation_ms": 4605.79,
+        "total_ms": 9599.21
+      }
+    },
+    {
+      "query_id": "17",
+      "query": "What are the credit hour requirements for bachelor programs at NUST?",
+      "answer_length": 960,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 4,
+        "unique_citations": 4,
+        "citation_coverage": 0.364,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.444,
+        "ngram_overlap_2": 0.245,
+        "ngram_overlap_3": 0.101,
+        "faithfulness_score": 0.263
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.182,
+        "key_terms_coverage": 0.125
+      },
+      "latency": {
+        "query_id": "17",
+        "retrieval_ms": 5048.21,
+        "generation_ms": 4318.14,
+        "total_ms": 9366.35
+      }
+    },
+    {
+      "query_id": "18",
+      "query": "What is the priority for hostel allotment at NUST?",
+      "answer_length": 860,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 4,
+        "unique_citations": 4,
+        "citation_coverage": 0.286,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 1.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "word_overlap": 0.661,
+        "ngram_overlap_2": 0.312,
+        "ngram_overlap_3": 0.179,
+        "faithfulness_score": 0.384
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.111,
+        "key_terms_coverage": 0.1
+      },
+      "latency": {
+        "query_id": "18",
+        "retrieval_ms": 5444.52,
+        "generation_ms": 4629.6,
+        "total_ms": 10074.13
+      }
+    }
+  ]
+}
