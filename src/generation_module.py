@@ -6,6 +6,7 @@ import sqlite3
 from typing import List, Dict, Any, Optional, Annotated
 from datetime import datetime
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
@@ -32,12 +33,18 @@ SYSTEM_PROMPT = """You are the NUST Policies Copilot, an AI assistant specifical
 5. **Abstain when uncertain** - if evidence is weak, outdated, or missing, clearly state limitations
 
 # CITATION REQUIREMENTS (CRITICAL)
-- Every factual claim MUST be supported by a numbered citation: [1], [2], etc.
-- Place citations immediately after the claim: "Students must maintain 2.5 CGPA [1]."
-- Multiple sources for one claim: "Attendance is mandatory [1][2]."
-- The citation number corresponds to the document number in the context
+- Every factual claim MUST be supported by a detailed citation with page/section information
+- Citation format: [N: doc_id, p.X] or [N: doc_id, §section] or [N: doc_id, p.X, §section]
+- Examples:
+  * "Students must maintain 2.5 CGPA [1: academic_policy_2024, p.15]."
+  * "Attendance is mandatory [2: student_handbook, §3.2]."
+  * "FYP guidelines state... [3: fyp_guidelines_v1.4, p.19, §SRS Template]."
+- For HTML sources with URLs, you may use: [N: doc_id, URL#section]
+- Multiple sources for one claim: [1: doc_id, p.X][2: doc_id, p.Y]
+- The citation number N corresponds to the document number in the context
 - NEVER make claims without citations from the provided context
-- If a source doesn't support your claim, DO NOT cite it
+- If page or section is not available in metadata, use: [N: doc_id]
+- Always include as much citation detail as available (page, section, URL)
 
 # ANSWER STRUCTURE
 1. **Direct Answer** (2-3 sentences with inline citations)
@@ -116,7 +123,7 @@ def get_current_academic_year() -> str:
         return f"{year-1}-{year}"
 
 def format_context_for_prompt(context: List[Dict[str, Any]]) -> str:
-    """Format retrieved context documents for the prompt."""
+    """Format retrieved context documents for the prompt with full citation metadata."""
     if not context:
         return "No context documents available."
     
@@ -125,15 +132,25 @@ def format_context_for_prompt(context: List[Dict[str, Any]]) -> str:
         metadata = doc.get('metadata', {})
         text = doc.get('text', '')
         
-        # Extract relevant metadata
+        # Extract all relevant metadata
         doc_id = metadata.get('doc_id', metadata.get('source', 'Unknown'))
         section = metadata.get('section', '')
+        page = metadata.get('page', '')
+        url = metadata.get('url', metadata.get('URL', ''))
         year = metadata.get('academic_year', metadata.get('year', 'Unknown'))
         
+        # Format document header
         formatted.append(f"[{i}] Document: {doc_id}")
+        if year and year != 'Unknown':
+            formatted.append(f"    Year: {year}")
+        if page:
+            formatted.append(f"    Page: {page}")
         if section:
-            formatted.append(f"    Section: {section}")
-        formatted.append(f"    Year: {year}")
+            # Truncate long sections
+            section_display = section[:100] + "..." if len(section) > 100 else section
+            formatted.append(f"    Section: {section_display}")
+        if url:
+            formatted.append(f"    URL: {url}")
         formatted.append(f"    Content: {text}\n")
     
     return "\n".join(formatted)
@@ -171,16 +188,37 @@ def check_document_freshness(context: List[Dict[str, Any]], current_year: str) -
     return outdated
 
 def generate_see_also(context: List[Dict[str, Any]], used_citations: List[int]) -> List[Dict[str, str]]:
-    """Generate 'See Also' links from unused relevant documents."""
+    """Generate 'See Also' links from unused relevant documents with full citation info."""
     see_also = []
     
     for i, doc in enumerate(context, 1):
         if i not in used_citations and i <= 5:
             metadata = doc.get('metadata', {})
+            
+            # Build citation string
+            doc_id = metadata.get('doc_id', metadata.get('source', f'Document {i}'))
+            page = metadata.get('page', '')
+            section = metadata.get('section', '')
+            url = metadata.get('url', metadata.get('URL', ''))
+            
+            # Format citation parts
+            citation_parts = [doc_id]
+            if page:
+                citation_parts.append(f"p.{page}")
+            if section:
+                # Truncate long sections
+                section_short = section[:50] + "..." if len(section) > 50 else section
+                citation_parts.append(f"§{section_short}")
+            
+            citation_display = ", ".join(citation_parts)
+            
             see_also.append({
-                'title': metadata.get('doc_id', metadata.get('source', f'Document {i}')),
-                'section': metadata.get('section', ''),
-                'citation_num': str(i)
+                'title': doc_id,
+                'section': section,
+                'page': page,
+                'url': url,
+                'citation_num': str(i),
+                'citation_display': citation_display
             })
     
     return see_also[:3]
@@ -190,11 +228,17 @@ def generate_see_also(context: List[Dict[str, Any]], used_citations: List[int]) 
 def chat_node(state: ChatbotState):
     """Main chat node that generates responses with citations."""
     
+    # # Initialize LLM
+    # llm = ChatOllama(
+    #     model="qwen2.5:3b-instruct-q4_K_M",
+    #     temperature=0.5,
+    #     num_predict=1024
+    # )
+    
     # Initialize LLM
-    llm = ChatOllama(
-        model="qwen2.5:3b-instruct-q4_K_M",
-        temperature=0.1,
-        num_predict=1024
+    llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0.5
     )
     
     # Get context and settings
@@ -319,8 +363,8 @@ def generate_answer_with_retrieval(
     if see_also:
         answer += "\n\n**See Also:**\n"
         for item in see_also:
-            section_text = f" - {item['section']}" if item['section'] else ""
-            answer += f"- [{item['citation_num']}] {item['title']}{section_text}\n"
+            # Use the full citation display
+            answer += f"- [{item['citation_num']}: {item['citation_display']}]\n"
     
     return {
         "answer": answer,
