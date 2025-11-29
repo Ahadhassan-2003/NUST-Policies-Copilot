@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnableConfig
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent))
 
-from hybrid_retriever import load_chunks, load_vector_indices, load_bm25_index, hybrid_search
+from hybrid_retriever import load_chunks, load_bm25_index, load_vector_indices, hybrid_search
 from generation_module import (
     chatbot, 
     retrieve_all_threads, 
@@ -73,7 +73,7 @@ st.markdown("""
     .source-text {
         font-size: 0.9rem;
         line-height: 1.6;
-        color: #333;
+        color: #ffff;
     }
     
     .thread-button {
@@ -398,8 +398,8 @@ if user_input:
         if see_also:
             see_also_text = "\n\n**See Also:**\n"
             for item in see_also:
-                section_text = f" - {item['section']}" if item['section'] else ""
-                see_also_text += f"- [{item['citation_num']}] {item['title']}{section_text}\n"
+                # Use full citation display
+                see_also_text += f"- [{item['citation_num']}: {item['citation_display']}]\n"
             st.markdown(see_also_text)
             ai_message += see_also_text
         

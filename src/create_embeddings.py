@@ -18,47 +18,136 @@ load_dotenv()
 os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot"
 
 # ========= INPUT / OUTPUT PATHS ========= #
-
-PDF_JSONL = Path("./data/processed/pdf_chunks.jsonl")
+PDF_JSONL = Path("./data/processed/pdf_chunks_pymu.jsonl")
 HTML_JSONL = Path("./data/processed/html_chunks.jsonl")
 
 INDEX_A_DIR = "./data/vectorstores/chroma_index_openAI"
 INDEX_B_DIR = "./data/vectorstores/chroma_index_bge_m3"
 BM25_INDEX_PATH = Path("./data/vectorstores/bm25_index.pkl")
 
-
 # ========= FLATTEN METADATA FOR CHROMADB ========= #
-
 @traceable(name="flatten_metadata")
 def flatten_metadata(item):
     """
     ChromaDB only supports simple types (str, int, float, bool) in metadata.
     Convert complex fields like lists to JSON strings.
+    Ensures page, section, URL, doc_id are preserved.
     """
     metadata = {}
     
+    # Priority fields that should always be extracted
+    priority_fields = ['doc_id', 'page', 'section', 'url', 'URL', 'year', 'source']
+    
     for key, value in item.items():
-        if key == "chunk_text":
-            # Skip the text content itself (it goes in the document, not metadata)
+        # Skip text content fields
+        if key in ["chunk_text", "text"]:
             continue
-        elif key == "text":
-            # Skip the text content itself
-            continue
+        
+        # Handle priority fields - ensure they're simple types
+        if key in priority_fields:
+            if value is None:
+                continue  # Skip None values
+            elif isinstance(value, (int, float, bool)):
+                metadata[key] = value
+            else:
+                # Convert to string for consistency
+                metadata[key] = str(value)
+        
+        # Handle other fields
         elif isinstance(value, (list, dict)):
             # Serialize complex types to JSON string
             metadata[key] = json.dumps(value, ensure_ascii=False)
-        elif isinstance(value, (str, int, float, bool, type(None))):
+        elif isinstance(value, (str, int, float, bool)):
             # Keep simple types as-is
             metadata[key] = value
-        else:
+        elif value is not None:
             # Convert anything else to string
             metadata[key] = str(value)
     
+    # Normalize URL field (handle both 'url' and 'URL')
+    if 'URL' in metadata and 'url' not in metadata:
+        metadata['url'] = metadata['URL']
+    elif 'url' in metadata and 'URL' not in metadata:
+        metadata['URL'] = metadata['url']
+    
+    # Ensure doc_id exists (fallback to source if needed)
+    if 'doc_id' not in metadata and 'source' in metadata:
+        metadata['doc_id'] = metadata['source']
+    
     return metadata
 
+# ========= VALIDATE METADATA ========= #
+@traceable(name="validate_chunk_metadata")
+def validate_chunk_metadata(chunks):
+    """
+    Validate that chunks have required metadata fields.
+    Print statistics about metadata coverage.
+    """
+    print("\n" + "="*60)
+    print("METADATA VALIDATION")
+    print("="*60)
+    
+    total = len(chunks)
+    stats = {
+        'has_doc_id': 0,
+        'has_page': 0,
+        'has_section': 0,
+        'has_url': 0,
+        'has_year': 0
+    }
+    
+    missing_doc_id = []
+    
+    for i, chunk in enumerate(chunks):
+        metadata = chunk['metadata']
+        
+        if metadata.get('doc_id'):
+            stats['has_doc_id'] += 1
+        else:
+            missing_doc_id.append(i)
+        
+        if metadata.get('page') is not None:
+            stats['has_page'] += 1
+        
+        if metadata.get('section'):
+            stats['has_section'] += 1
+        
+        if metadata.get('url') or metadata.get('URL'):
+            stats['has_url'] += 1
+        
+        if metadata.get('year'):
+            stats['has_year'] += 1
+    
+    # Print statistics
+    print(f"Total chunks: {total}")
+    print(f"\nMetadata Coverage:")
+    print(f"  doc_id:  {stats['has_doc_id']:4d} / {total} ({stats['has_doc_id']/total*100:.1f}%)")
+    print(f"  page:    {stats['has_page']:4d} / {total} ({stats['has_page']/total*100:.1f}%)")
+    print(f"  section: {stats['has_section']:4d} / {total} ({stats['has_section']/total*100:.1f}%)")
+    print(f"  url:     {stats['has_url']:4d} / {total} ({stats['has_url']/total*100:.1f}%)")
+    print(f"  year:    {stats['has_year']:4d} / {total} ({stats['has_year']/total*100:.1f}%)")
+    
+    if missing_doc_id:
+        print(f"\n⚠ Warning: {len(missing_doc_id)} chunks missing doc_id")
+        if len(missing_doc_id) <= 5:
+            print(f"  Indices: {missing_doc_id}")
+    
+    # Sample metadata for verification
+    print(f"\nSample Metadata (first 3 chunks):")
+    for i in range(min(3, len(chunks))):
+        print(f"\n  Chunk {i}:")
+        metadata = chunks[i]['metadata']
+        print(f"    doc_id:  {metadata.get('doc_id', 'N/A')}")
+        print(f"    page:    {metadata.get('page', 'N/A')}")
+        print(f"    section: {metadata.get('section', 'N/A')[:50] if metadata.get('section') else 'N/A'}")
+        print(f"    url:     {metadata.get('url', metadata.get('URL', 'N/A'))}")
+        print(f"    year:    {metadata.get('year', 'N/A')}")
+    
+    print("="*60 + "\n")
+    
+    return stats
 
 # ========= LOAD CHUNKS ========= #
-
 @traceable(name="load_chunks")
 def load_chunks():
     chunks = []
@@ -131,11 +220,14 @@ def load_chunks():
         print(f"Warning: Missing file {HTML_JSONL}")
     
     print(f"\nTotal chunks loaded: {len(chunks)}\n")
+    
+    # Validate metadata
+    if chunks:
+        validate_chunk_metadata(chunks)
+    
     return chunks
 
-
 # ========= BUILD BM25 INDEX ========= #
-
 @traceable(name="build_bm25_index")
 def build_bm25_index(chunks):
     print("="*60)
@@ -161,7 +253,14 @@ def build_bm25_index(chunks):
             pickle.dump(bm25_retriever, f)
         
         print(f"\n✓ BM25 Index saved at: {BM25_INDEX_PATH}")
-        print(f"  Total documents: {len(lc_docs)}\n")
+        print(f"  Total documents: {len(lc_docs)}")
+        
+        # Verify metadata preservation
+        print(f"\n  Verifying metadata preservation in BM25...")
+        sample_doc = lc_docs[0]
+        print(f"    Sample doc_id: {sample_doc.metadata.get('doc_id', 'N/A')}")
+        print(f"    Sample page: {sample_doc.metadata.get('page', 'N/A')}")
+        print(f"    Sample section: {sample_doc.metadata.get('section', 'N/A')[:50] if sample_doc.metadata.get('section') else 'N/A'}")
         
         return True
         
@@ -171,9 +270,7 @@ def build_bm25_index(chunks):
         traceback.print_exc()
         return False
 
-
 # ========= BUILD INDEX A (OpenAI Embeddings) ========= #
-
 @traceable(name="build_index_openai")
 def build_index_openai(chunks):
     print("="*60)
@@ -211,7 +308,16 @@ def build_index_openai(chunks):
             print(f"  Processed {min(i+batch_size, len(texts))}/{len(texts)} chunks")
         
         print(f"\n✓ Index A saved at: {INDEX_A_DIR}")
-        print(f"  Total documents: {len(texts)}\n")
+        print(f"  Total documents: {len(texts)}")
+        
+        # Verify metadata preservation
+        print(f"\n  Verifying metadata preservation in Chroma...")
+        test_results = vectorstore.similarity_search("test", k=1)
+        if test_results:
+            sample_meta = test_results[0].metadata
+            print(f"    Sample doc_id: {sample_meta.get('doc_id', 'N/A')}")
+            print(f"    Sample page: {sample_meta.get('page', 'N/A')}")
+            print(f"    Sample section: {sample_meta.get('section', 'N/A')[:50] if sample_meta.get('section') else 'N/A'}")
         
         return True
         
@@ -221,9 +327,7 @@ def build_index_openai(chunks):
         traceback.print_exc()
         return False
 
-
 # ========= BUILD INDEX B (BAAI/BGE-M3) ========= #
-
 @traceable(name="build_index_bge")
 def build_index_bge(chunks):
     print("="*60)
@@ -261,7 +365,16 @@ def build_index_bge(chunks):
             print(f"  Processed {min(i+batch_size, len(texts))}/{len(texts)} chunks")
         
         print(f"\n✓ Index B saved at: {INDEX_B_DIR}")
-        print(f"  Total documents: {len(texts)}\n")
+        print(f"  Total documents: {len(texts)}")
+        
+        # Verify metadata preservation
+        print(f"\n  Verifying metadata preservation in BGE...")
+        test_results = vectorstore.similarity_search("test", k=1)
+        if test_results:
+            sample_meta = test_results[0].metadata
+            print(f"    Sample doc_id: {sample_meta.get('doc_id', 'N/A')}")
+            print(f"    Sample page: {sample_meta.get('page', 'N/A')}")
+            print(f"    Sample section: {sample_meta.get('section', 'N/A')[:50] if sample_meta.get('section') else 'N/A'}")
         
         return True
         
@@ -271,9 +384,7 @@ def build_index_bge(chunks):
         traceback.print_exc()
         return False
 
-
 # ========= MAIN RUNNER ========= #
-
 @traceable(name="create_all_indices")
 def main():
     print("Starting embedding and index generation process...\n")
@@ -290,7 +401,7 @@ def main():
     success_b = build_index_bge(chunks)
     
     # Summary
-    print("="*60)
+    print("\n" + "="*60)
     print("SUMMARY")
     print("="*60)
     print(f"BM25 Index:       {'✓ Success' if success_bm25 else '✗ Failed'}")
@@ -299,10 +410,17 @@ def main():
     
     if success_bm25 and success_a and success_b:
         print("\n✓ All indices created successfully!")
+        print("\nMetadata fields preserved:")
+        print("  • doc_id (document identifier)")
+        print("  • page (page number)")
+        print("  • section (section name/heading)")
+        print("  • url/URL (web address)")
+        print("  • year (academic year or publication year)")
+        print("  • source_type (pdf/html)")
+        print("\nIndices are ready for retrieval with full citation metadata!")
     else:
         print("\n⚠ Some indexes failed to create. Check errors above.")
         exit(1)
-
 
 if __name__ == "__main__":
     main()
