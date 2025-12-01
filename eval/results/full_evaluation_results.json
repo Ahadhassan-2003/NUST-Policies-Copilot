@@ -6,71 +6,60 @@
   },
   "total_queries": 23,
   "retrieval": {
-    "hit_rate": {
+    "recall": {
       "1": 0.782608695652174,
       "3": 0.9565217391304348,
       "5": 1.0,
       "10": 1.0
     },
     "ndcg": {
-      "3": 0.8915624544991231,
-      "5": 0.9101086701792648,
-      "10": 0.9016895092130843
+      "3": 0.895052854970941,
+      "5": 0.9134506982845695,
+      "10": 0.9045596990613957
     }
   },
   "generation": {
     "total_queries": 23,
     "citation": {
-      "citation_count_mean": 4.261,
-      "citation_count_std": 0.845,
-      "citation_coverage_mean": 0.355,
-      "citation_coverage_std": 0.126,
-      "expected_sources_recall_mean": 0.645,
-      "expected_sources_recall_std": 0.284,
+      "citation_count_mean": 4.043,
+      "citation_count_std": 1.042,
+      "expected_sources_recall_mean": 0.641,
+      "expected_sources_recall_std": 0.262,
       "format_quality_mean": 1.0,
       "format_quality_std": 0.0
     },
     "faithfulness": {
-      "faithfulness_score_mean": 0.857,
-      "faithfulness_score_std": 0.197,
-      "faithfulness_score_min": 0.4,
+      "faithfulness_score_mean": 0.817,
+      "faithfulness_score_std": 0.253,
+      "faithfulness_score_min": 0.0,
       "faithfulness_score_max": 1.0,
       "evaluation_method": "llm",
       "avg_sources_evaluated": 2.0
     },
-    "abstention": {
-      "abstention_rate": 0.0,
-      "should_abstain_rate": 0.0,
-      "appropriate_rate": 1.0,
-      "correct_abstentions": 0,
-      "correct_answers": 23,
-      "false_abstentions": 0,
-      "false_confidence": 0
-    },
     "answer_quality": {
-      "word_overlap_mean": 0.394
+      "word_overlap_mean": 0.384
     },
     "latency": {
       "retrieval_ms": {
-        "mean": 5905.13,
-        "median": 5785.04,
-        "std": 756.67,
-        "p95": 7292.07,
-        "p99": 8066.85
+        "mean": 5629.28,
+        "median": 5422.26,
+        "std": 1012.63,
+        "p95": 7470.75,
+        "p99": 8731.27
       },
       "generation_ms": {
-        "mean": 4920.96,
-        "median": 4856.2,
-        "std": 1688.91,
-        "p95": 7572.12,
-        "p99": 9045.28
+        "mean": 6039.8,
+        "median": 5810.66,
+        "std": 2175.36,
+        "p95": 10422.4,
+        "p99": 11976.95
       },
       "total_ms": {
-        "mean": 10826.1,
-        "median": 10974.1,
-        "std": 1836.54,
-        "p95": 13475.88,
-        "p99": 14841.1
+        "mean": 11669.08,
+        "median": 11716.77,
+        "std": 2361.32,
+        "p95": 15878.23,
+        "p99": 17409.86
       }
     }
   },
@@ -78,12 +67,11 @@
     {
       "query_id": "1",
       "query": "When was NUST established and what is its primary focus?",
-      "answer_length": 697,
+      "answer_length": 708,
       "num_sources": 10,
       "citation": {
         "citation_count": 3,
         "unique_citations": 3,
-        "citation_coverage": 0.3,
         "expected_sources_found": 1,
         "expected_sources_total": 1,
         "expected_sources_recall": 1.0,
@@ -95,41 +83,31 @@
       },
       "faithfulness": {
         "faithfulness_score": 1.0,
-        "reasoning": "Every claim in the answer is directly supported by the provided sources, including the establishment date and the primary focus of NUST.",
+        "reasoning": "Every claim in the answer is directly supported by the sources, including the establishment date and the primary focus of NUST.",
         "unsupported_claims": "None",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim in the answer is directly supported by the provided sources, including the establishment date and the primary focus of NUST.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 10  \nReasoning: Every claim in the answer is directly supported by the sources, including the establishment date and the primary focus of NUST.  \nUnsupported: None"
       },
       "answer_quality": {
         "word_overlap_with_expected": 0.579,
-        "key_terms_coverage": 0.64
+        "key_terms_coverage": 0.6
       },
       "latency": {
         "query_id": "1",
-        "retrieval_ms": 5308.1,
-        "generation_ms": 4214.63,
-        "total_ms": 9522.74
+        "retrieval_ms": 4317.81,
+        "generation_ms": 3771.85,
+        "total_ms": 8089.66
       }
     },
     {
       "query_id": "2",
       "query": "What are the vision and mission statements of NUST?",
-      "answer_length": 1017,
+      "answer_length": 1021,
       "num_sources": 10,
       "citation": {
         "citation_count": 5,
         "unique_citations": 5,
-        "citation_coverage": 0.417,
         "expected_sources_found": 3,
         "expected_sources_total": 3,
         "expected_sources_recall": 1.0,
@@ -141,20 +119,11 @@
       },
       "faithfulness": {
         "faithfulness_score": 0.8,
-        "reasoning": "The vision statement is directly supported by both sources, but the mission statement lacks direct evidence from the provided sources.",
+        "reasoning": "The vision statement is directly supported by the sources, but the mission statement lacks direct evidence from the provided sources.",
         "unsupported_claims": "Mission statement claims regarding stimulating intellectual curiosity, behavioral progression, environmental stewardship, and nurturing future leaders.",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 8  \nReasoning: The vision statement is directly supported by both sources, but the mission statement lacks direct evidence from the provided sources.  \nUnsupported: Mission statement claims regarding stimulating intellectual curiosity, behavioral progression, environmental stewardship, and nurturing future leaders."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 8/10  \nReasoning: The vision statement is directly supported by the sources, but the mission statement lacks direct evidence from the provided sources.  \nUnsupported: Mission statement claims regarding stimulating intellectual curiosity, behavioral progression, environmental stewardship, and nurturing future leaders."
       },
       "answer_quality": {
         "word_overlap_with_expected": 0.596,
@@ -162,20 +131,19 @@
       },
       "latency": {
         "query_id": "2",
-        "retrieval_ms": 4991.14,
-        "generation_ms": 6091.38,
-        "total_ms": 11082.52
+        "retrieval_ms": 5470.65,
+        "generation_ms": 10610.22,
+        "total_ms": 16080.88
       }
     },
     {
       "query_id": "3",
       "query": "What are NUST's key rankings and achievements?",
-      "answer_length": 1267,
+      "answer_length": 1291,
       "num_sources": 10,
       "citation": {
         "citation_count": 6,
         "unique_citations": 6,
-        "citation_coverage": 0.462,
         "expected_sources_found": 2,
         "expected_sources_total": 3,
         "expected_sources_recall": 0.667,
@@ -187,20 +155,11 @@
       },
       "faithfulness": {
         "faithfulness_score": 0.6,
-        "reasoning": "The answer includes some accurate rankings and achievements of NUST, but the specific rankings mentioned (371st and 67th) are not supported by the provided sources, which only reference a ranking of 334th.",
+        "reasoning": "The answer contains some supported claims regarding NUST's rankings, but the specific rankings mentioned (371st and 67th) are not corroborated by the provided sources, which only reference a ranking of 334th.",
         "unsupported_claims": "Claims of NUST being ranked 371st globally and 67th in Asia.",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 6  \nReasoning: The answer includes some accurate rankings and achievements of NUST, but the specific rankings mentioned (371st and 67th) are not supported by the provided sources, which only reference a ranking of 334th.  \nUnsupported: Claims of NUST being ranked 371st globally and 67th in Asia."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 6  \nReasoning: The answer contains some supported claims regarding NUST's rankings, but the specific rankings mentioned (371st and 67th) are not corroborated by the provided sources, which only reference a ranking of 334th.  \nUnsupported: Claims of NUST being ranked 371st globally and 67th in Asia."
       },
       "answer_quality": {
         "word_overlap_with_expected": 0.487,
@@ -208,20 +167,19 @@
       },
       "latency": {
         "query_id": "3",
-        "retrieval_ms": 6209.3,
-        "generation_ms": 5114.03,
-        "total_ms": 11323.34
+        "retrieval_ms": 4721.74,
+        "generation_ms": 7025.5,
+        "total_ms": 11747.25
       }
     },
     {
       "query_id": "4",
       "query": "What facilities does the NUST Central Library offer?",
-      "answer_length": 958,
+      "answer_length": 1000,
       "num_sources": 10,
       "citation": {
         "citation_count": 3,
         "unique_citations": 3,
-        "citation_coverage": 0.2,
         "expected_sources_found": 1,
         "expected_sources_total": 2,
         "expected_sources_recall": 0.5,
@@ -239,35 +197,25 @@
         "evaluation_method": "llm",
         "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported or clearly implied by the provided sources.  \nUnsupported: None"
       },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
       "answer_quality": {
         "word_overlap_with_expected": 0.517,
         "key_terms_coverage": 0.412
       },
       "latency": {
         "query_id": "4",
-        "retrieval_ms": 5785.04,
-        "generation_ms": 2971.74,
-        "total_ms": 8756.78
+        "retrieval_ms": 4789.86,
+        "generation_ms": 4136.0,
+        "total_ms": 8925.86
       }
     },
     {
       "query_id": "5",
       "query": "What are the hostel accommodation options and charges at NUST?",
-      "answer_length": 1492,
+      "answer_length": 1503,
       "num_sources": 10,
       "citation": {
         "citation_count": 5,
         "unique_citations": 5,
-        "citation_coverage": 0.5,
         "expected_sources_found": 2,
         "expected_sources_total": 4,
         "expected_sources_recall": 0.5,
@@ -280,19 +228,10 @@
       "faithfulness": {
         "faithfulness_score": 0.8,
         "reasoning": "Most claims about the hostel options and charges are well-supported by the sources, but some specific details about the hostels and charges lack direct evidence.",
-        "unsupported_claims": "Specific names of hostels and the exact charges for national and international students are not directly confirmed in the provided sources.",
+        "unsupported_claims": "Specific names of hostels and their categorization (e.g., postgraduate vs. undergraduate) are not directly mentioned in the sources.",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 8  \nReasoning: Most claims about the hostel options and charges are well-supported by the sources, but some specific details about the hostels and charges lack direct evidence.  \nUnsupported: Specific names of hostels and the exact charges for national and international students are not directly confirmed in the provided sources."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 8  \nReasoning: Most claims about the hostel options and charges are well-supported by the sources, but some specific details about the hostels and charges lack direct evidence.  \nUnsupported: Specific names of hostels and their categorization (e.g., postgraduate vs. undergraduate) are not directly mentioned in the sources."
       },
       "answer_quality": {
         "word_overlap_with_expected": 0.25,
@@ -300,20 +239,19 @@
       },
       "latency": {
         "query_id": "5",
-        "retrieval_ms": 6218.45,
-        "generation_ms": 6055.13,
-        "total_ms": 12273.59
+        "retrieval_ms": 5422.26,
+        "generation_ms": 12362.44,
+        "total_ms": 17784.7
       }
     },
     {
       "query_id": "6",
       "query": "What is the duration and coursework requirement for PhD studies at NUST?",
-      "answer_length": 895,
+      "answer_length": 900,
       "num_sources": 10,
       "citation": {
         "citation_count": 5,
         "unique_citations": 5,
-        "citation_coverage": 0.385,
         "expected_sources_found": 2,
         "expected_sources_total": 3,
         "expected_sources_recall": 0.667,
@@ -329,16 +267,7 @@
         "unsupported_claims": "None",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 10/10  \nReasoning: Every claim made in the answer is directly supported by the information provided in the sources, including the duration of PhD studies and the coursework requirements.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the information provided in the sources, including the duration of PhD studies and the coursework requirements.  \nUnsupported: None"
       },
       "answer_quality": {
         "word_overlap_with_expected": 0.844,
@@ -346,296 +275,235 @@
       },
       "latency": {
         "query_id": "6",
-        "retrieval_ms": 5535.79,
-        "generation_ms": 5438.31,
-        "total_ms": 10974.1
+        "retrieval_ms": 5151.68,
+        "generation_ms": 7628.46,
+        "total_ms": 12780.15
       }
     },
     {
-      "query_id": "8",
+      "query_id": "7",
       "query": "What are the program learning outcomes for engineering degrees?",
-      "answer_length": 1258,
-      "num_sources": 10,
-      "citation": {
-        "citation_count": 4,
-        "unique_citations": 4,
-        "citation_coverage": 0.364,
-        "expected_sources_found": 2,
-        "expected_sources_total": 2,
-        "expected_sources_recall": 1.0,
-        "page_accuracy": null,
-        "format_quality": 1.0,
-        "citations_valid": true,
-        "detailed_citations": 5,
-        "simple_citations": 0
-      },
-      "faithfulness": {
-        "faithfulness_score": 1.0,
-        "reasoning": "Every claim made in the answer is directly supported by the provided sources, accurately reflecting the Program Learning Outcomes for engineering degrees.",
-        "unsupported_claims": "None",
-        "num_sources_evaluated": 2,
-        "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the provided sources, accurately reflecting the Program Learning Outcomes for engineering degrees.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
-      "answer_quality": {
-        "word_overlap_with_expected": 0.167,
-        "key_terms_coverage": 0.083
-      },
-      "latency": {
-        "query_id": "8",
-        "retrieval_ms": 6624.75,
-        "generation_ms": 6203.64,
-        "total_ms": 12828.39
-      }
-    },
-    {
-      "query_id": "9",
-      "query": "What are the evaluation stages in the Final Year Project?",
-      "answer_length": 1273,
+      "answer_length": 995,
       "num_sources": 10,
       "citation": {
         "citation_count": 3,
         "unique_citations": 3,
-        "citation_coverage": 0.273,
-        "expected_sources_found": 1,
-        "expected_sources_total": 1,
-        "expected_sources_recall": 1.0,
-        "page_accuracy": null,
-        "format_quality": 1.0,
-        "citations_valid": true,
-        "detailed_citations": 7,
-        "simple_citations": 0
-      },
-      "faithfulness": {
-        "faithfulness_score": 1.0,
-        "reasoning": "Every claim made in the answer is directly supported by the provided sources, with clear references to the evaluation stages and their descriptions.",
-        "unsupported_claims": "None",
-        "num_sources_evaluated": 2,
-        "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the provided sources, with clear references to the evaluation stages and their descriptions.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
-      "answer_quality": {
-        "word_overlap_with_expected": 0.286,
-        "key_terms_coverage": 0.286
-      },
-      "latency": {
-        "query_id": "9",
-        "retrieval_ms": 6267.17,
-        "generation_ms": 5683.92,
-        "total_ms": 11951.1
-      }
-    },
-    {
-      "query_id": "10",
-      "query": "What documents are needed for the NUST Need-Based Scholarship application?",
-      "answer_length": 924,
-      "num_sources": 10,
-      "citation": {
-        "citation_count": 5,
-        "unique_citations": 5,
-        "citation_coverage": 0.5,
-        "expected_sources_found": 5,
-        "expected_sources_total": 8,
-        "expected_sources_recall": 0.625,
-        "page_accuracy": null,
-        "format_quality": 1.0,
-        "citations_valid": true,
-        "detailed_citations": 6,
-        "simple_citations": 0
-      },
-      "faithfulness": {
-        "faithfulness_score": 0.8,
-        "reasoning": "Most claims in the answer are well-supported by the sources, particularly regarding the need for the NUST Need-Based Scholarship Form and income certificates, but the mention of \"additional documents\" lacks direct evidence.",
-        "unsupported_claims": "\"Additional documents may be required depending on individual circumstances, and candidates may be asked to provide proof of applying for external scholarships.\"",
-        "num_sources_evaluated": 2,
-        "evaluation_method": "llm",
-        "llm_response": "Score: 8  \nReasoning: Most claims in the answer are well-supported by the sources, particularly regarding the need for the NUST Need-Based Scholarship Form and income certificates, but the mention of \"additional documents\" lacks direct evidence.  \nUnsupported: \"Additional documents may be required depending on individual circumstances, and candidates may be asked to provide proof of applying for external scholarships.\""
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
-      "answer_quality": {
-        "word_overlap_with_expected": 0.129,
-        "key_terms_coverage": 0.095
-      },
-      "latency": {
-        "query_id": "10",
-        "retrieval_ms": 6077.04,
-        "generation_ms": 2833.08,
-        "total_ms": 8910.13
-      }
-    },
-    {
-      "query_id": "11",
-      "query": "What documents are required for registration at SEECS NUST for PG students?",
-      "answer_length": 1188,
-      "num_sources": 10,
-      "citation": {
-        "citation_count": 5,
-        "unique_citations": 5,
-        "citation_coverage": 0.417,
-        "expected_sources_found": 1,
-        "expected_sources_total": 1,
-        "expected_sources_recall": 1.0,
-        "page_accuracy": null,
-        "format_quality": 1.0,
-        "citations_valid": true,
-        "detailed_citations": 7,
-        "simple_citations": 0
-      },
-      "faithfulness": {
-        "faithfulness_score": 1.0,
-        "reasoning": "Every claim made in the answer is directly supported by the information provided in the sources, including the required documents and the consequences of incomplete documentation.",
-        "unsupported_claims": "None",
-        "num_sources_evaluated": 2,
-        "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the information provided in the sources, including the required documents and the consequences of incomplete documentation.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
-      "answer_quality": {
-        "word_overlap_with_expected": 0.222,
-        "key_terms_coverage": 0.208
-      },
-      "latency": {
-        "query_id": "11",
-        "retrieval_ms": 5800.18,
-        "generation_ms": 5367.52,
-        "total_ms": 11167.71
-      }
-    },
-    {
-      "query_id": "13",
-      "query": "What details are included in the Medical Fitness Certificate for students?",
-      "answer_length": 831,
-      "num_sources": 10,
-      "citation": {
-        "citation_count": 5,
-        "unique_citations": 5,
-        "citation_coverage": 0.625,
-        "expected_sources_found": 2,
-        "expected_sources_total": 3,
-        "expected_sources_recall": 0.667,
-        "page_accuracy": null,
-        "format_quality": 1.0,
-        "citations_valid": true,
-        "detailed_citations": 5,
-        "simple_citations": 0
-      },
-      "faithfulness": {
-        "faithfulness_score": 0.6,
-        "reasoning": "The answer includes some details about the Medical Fitness Certificate that are not explicitly supported by the provided sources, such as the specific personal information and health metrics listed.",
-        "unsupported_claims": "Personal Information details (Roll No, Father's Name, Age), specific health metrics (Weight, Height, Blood Pressure, Blood Group, Condition of Lungs, Condition of Heart, Vision details).",
-        "num_sources_evaluated": 2,
-        "evaluation_method": "llm",
-        "llm_response": "Score: 6  \nReasoning: The answer includes some details about the Medical Fitness Certificate that are not explicitly supported by the provided sources, such as the specific personal information and health metrics listed.  \nUnsupported: Personal Information details (Roll No, Father's Name, Age), specific health metrics (Weight, Height, Blood Pressure, Blood Group, Condition of Lungs, Condition of Heart, Vision details)."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
-      "answer_quality": {
-        "word_overlap_with_expected": 0.211,
-        "key_terms_coverage": 0.19
-      },
-      "latency": {
-        "query_id": "13",
-        "retrieval_ms": 8264.46,
-        "generation_ms": 3676.42,
-        "total_ms": 11940.89
-      }
-    },
-    {
-      "query_id": "14",
-      "query": "What is the policy on drug and tobacco abuse at NUST?",
-      "answer_length": 1062,
-      "num_sources": 10,
-      "citation": {
-        "citation_count": 4,
-        "unique_citations": 4,
-        "citation_coverage": 0.333,
         "expected_sources_found": 1,
         "expected_sources_total": 2,
         "expected_sources_recall": 0.5,
         "page_accuracy": null,
         "format_quality": 1.0,
         "citations_valid": true,
+        "detailed_citations": 4,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 1.0,
+        "reasoning": "Every claim in the answer is directly supported by the provided sources, which outline the Program Learning Outcomes for engineering degrees, including the specific attributes of Engineering Knowledge and Problem Analysis.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 10  \nReasoning: Every claim in the answer is directly supported by the provided sources, which outline the Program Learning Outcomes for engineering degrees, including the specific attributes of Engineering Knowledge and Problem Analysis.  \nUnsupported: None"
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.133,
+        "key_terms_coverage": 0.042
+      },
+      "latency": {
+        "query_id": "7",
+        "retrieval_ms": 5135.13,
+        "generation_ms": 4160.21,
+        "total_ms": 9295.34
+      }
+    },
+    {
+      "query_id": "8",
+      "query": "What are the evaluation stages in the Final Year Project?",
+      "answer_length": 1119,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 4,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.9,
+        "reasoning": "The answer accurately outlines the evaluation stages of the Final Year Project as described in the sources, with minor details that could be inferred but are not explicitly stated.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 9  \nReasoning: The answer accurately outlines the evaluation stages of the Final Year Project as described in the sources, with minor details that could be inferred but are not explicitly stated.  \nUnsupported: None"
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.357,
+        "key_terms_coverage": 0.214
+      },
+      "latency": {
+        "query_id": "8",
+        "retrieval_ms": 5810.43,
+        "generation_ms": 5810.66,
+        "total_ms": 11621.09
+      }
+    },
+    {
+      "query_id": "9",
+      "query": "What documents are needed for the NUST Need-Based Scholarship application?",
+      "answer_length": 1092,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
+        "expected_sources_found": 3,
+        "expected_sources_total": 8,
+        "expected_sources_recall": 0.375,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.8,
+        "reasoning": "Most claims in the answer are well-supported by the sources, particularly regarding the need for the scholarship form, income certificates, and the possibility of an interview, but the mention of \"supporting documents\" could use more explicit backing.",
+        "unsupported_claims": "\"Additional documents may be required to validate the information provided in the application, such as proof of income or financial hardship.\"",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 8  \nReasoning: Most claims in the answer are well-supported by the sources, particularly regarding the need for the scholarship form, income certificates, and the possibility of an interview, but the mention of \"supporting documents\" could use more explicit backing.  \nUnsupported: \"Additional documents may be required to validate the information provided in the application, such as proof of income or financial hardship.\""
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.129,
+        "key_terms_coverage": 0.095
+      },
+      "latency": {
+        "query_id": "9",
+        "retrieval_ms": 5962.38,
+        "generation_ms": 5754.39,
+        "total_ms": 11716.77
+      }
+    },
+    {
+      "query_id": "10",
+      "query": "What documents are required for registration at SEECS NUST for PG students?",
+      "answer_length": 1113,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 1.0,
+        "reasoning": "Every claim made in the answer is directly supported by the provided sources, including the specific documents required for registration and the consequences of incomplete documentation.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the provided sources, including the specific documents required for registration and the consequences of incomplete documentation.  \nUnsupported: None"
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.194,
+        "key_terms_coverage": 0.167
+      },
+      "latency": {
+        "query_id": "10",
+        "retrieval_ms": 7006.89,
+        "generation_ms": 6345.19,
+        "total_ms": 13352.08
+      }
+    },
+    {
+      "query_id": "11",
+      "query": "What details are included in the Medical Fitness Certificate for students?",
+      "answer_length": 1003,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 6,
+        "unique_citations": 6,
+        "expected_sources_found": 2,
+        "expected_sources_total": 3,
+        "expected_sources_recall": 0.667,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
         "detailed_citations": 6,
         "simple_citations": 0
       },
       "faithfulness": {
-        "faithfulness_score": 0.4,
-        "reasoning": "The answer contains some accurate information about the zero tolerance policy and the existence of an Anti-Drug & Tobacco Committee, but lacks direct support from the provided sources regarding the specifics of smoking policies and awareness programs.",
-        "unsupported_claims": "Specific details about smoking being allowed only in designated areas and the promotion of awareness programs by the Anti-Drug & Tobacco Committee.",
+        "faithfulness_score": 0.0,
+        "reasoning": "The answer provided details about the Medical Fitness Certificate that are not supported by the two sources, which only mention the requirement for a medical certificate without specifying the contents.",
+        "unsupported_claims": "All claims about the specific details included in the Medical Fitness Certificate.",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 4  \nReasoning: The answer contains some accurate information about the zero tolerance policy and the existence of an Anti-Drug & Tobacco Committee, but lacks direct support from the provided sources regarding the specifics of smoking policies and awareness programs.  \nUnsupported: Specific details about smoking being allowed only in designated areas and the promotion of awareness programs by the Anti-Drug & Tobacco Committee."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 0  \nReasoning: The answer provided details about the Medical Fitness Certificate that are not supported by the two sources, which only mention the requirement for a medical certificate without specifying the contents.  \nUnsupported: All claims about the specific details included in the Medical Fitness Certificate."
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.481,
-        "key_terms_coverage": 0.286
+        "word_overlap_with_expected": 0.211,
+        "key_terms_coverage": 0.19
       },
       "latency": {
-        "query_id": "14",
-        "retrieval_ms": 7366.22,
-        "generation_ms": 4404.73,
-        "total_ms": 11770.95
+        "query_id": "11",
+        "retrieval_ms": 7522.29,
+        "generation_ms": 5824.17,
+        "total_ms": 13346.46
       }
     },
     {
-      "query_id": "15",
+      "query_id": "12",
+      "query": "What is the policy on drug and tobacco abuse at NUST?",
+      "answer_length": 1020,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 5,
+        "unique_citations": 5,
+        "expected_sources_found": 1,
+        "expected_sources_total": 2,
+        "expected_sources_recall": 0.5,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.4,
+        "reasoning": "The answer mentions a zero tolerance policy and smoking restrictions, but the provided sources do not explicitly support these claims, leading to a lack of direct evidence for key details.",
+        "unsupported_claims": "Zero tolerance policy for drug use, strict enforcement by the Disciplinary Committee, smoking allowed only in designated areas, establishment of an Anti-Drug & Tobacco Committee.",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 4  \nReasoning: The answer mentions a zero tolerance policy and smoking restrictions, but the provided sources do not explicitly support these claims, leading to a lack of direct evidence for key details.  \nUnsupported: Zero tolerance policy for drug use, strict enforcement by the Disciplinary Committee, smoking allowed only in designated areas, establishment of an Anti-Drug & Tobacco Committee."
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.444,
+        "key_terms_coverage": 0.214
+      },
+      "latency": {
+        "query_id": "12",
+        "retrieval_ms": 9072.27,
+        "generation_ms": 4982.14,
+        "total_ms": 14054.42
+      }
+    },
+    {
+      "query_id": "13",
       "query": "What information is needed for the refund of admission dues at NUST?",
-      "answer_length": 783,
+      "answer_length": 960,
       "num_sources": 10,
       "citation": {
         "citation_count": 4,
         "unique_citations": 4,
-        "citation_coverage": 0.5,
         "expected_sources_found": 2,
         "expected_sources_total": 4,
         "expected_sources_recall": 0.5,
@@ -647,89 +515,33 @@
       },
       "faithfulness": {
         "faithfulness_score": 0.6,
-        "reasoning": "The answer provides some relevant information about the refund process, but it lacks direct support from the sources regarding the specific documents required and the timeline for the refund.",
-        "unsupported_claims": "The requirement for an original copy of the clearance certificate and the specific mention of the 45-day timeline for the refund are not supported by the provided sources.",
+        "reasoning": "The answer provides some relevant information about the refund process, but it lacks direct support from the sources regarding specific application requirements and submission instructions.",
+        "unsupported_claims": "Original copy of the clearance certificate from the Institute (if applicable); details about dispatching the application via email; the 45-day timeline for the refund transfer.",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 6  \nReasoning: The answer provides some relevant information about the refund process, but it lacks direct support from the sources regarding the specific documents required and the timeline for the refund.  \nUnsupported: The requirement for an original copy of the clearance certificate and the specific mention of the 45-day timeline for the refund are not supported by the provided sources."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 6  \nReasoning: The answer provides some relevant information about the refund process, but it lacks direct support from the sources regarding specific application requirements and submission instructions.  \nUnsupported: Original copy of the clearance certificate from the Institute (if applicable); details about dispatching the application via email; the 45-day timeline for the refund transfer."
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.312,
-        "key_terms_coverage": 0.2
+        "word_overlap_with_expected": 0.375,
+        "key_terms_coverage": 0.3
       },
       "latency": {
-        "query_id": "15",
-        "retrieval_ms": 5711.78,
-        "generation_ms": 2688.15,
-        "total_ms": 8399.94
+        "query_id": "13",
+        "retrieval_ms": 6005.44,
+        "generation_ms": 4340.22,
+        "total_ms": 10345.66
       }
     },
     {
-      "query_id": "16",
+      "query_id": "14",
       "query": "What are the constituent institutions of NUST?",
-      "answer_length": 1423,
+      "answer_length": 637,
       "num_sources": 10,
       "citation": {
         "citation_count": 4,
         "unique_citations": 4,
-        "citation_coverage": 0.143,
         "expected_sources_found": 3,
         "expected_sources_total": 3,
-        "expected_sources_recall": 1.0,
-        "page_accuracy": null,
-        "format_quality": 1.0,
-        "citations_valid": true,
-        "detailed_citations": 4,
-        "simple_citations": 0
-      },
-      "faithfulness": {
-        "faithfulness_score": 1.0,
-        "reasoning": "Every claim in the answer is directly supported by the sources, which confirm that NUST comprises 21 constituent institutions and list them accurately.",
-        "unsupported_claims": "None",
-        "num_sources_evaluated": 2,
-        "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim in the answer is directly supported by the sources, which confirm that NUST comprises 21 constituent institutions and list them accurately.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
-      "answer_quality": {
-        "word_overlap_with_expected": 0.31,
-        "key_terms_coverage": 0.375
-      },
-      "latency": {
-        "query_id": "16",
-        "retrieval_ms": 6041.96,
-        "generation_ms": 7405.94,
-        "total_ms": 13447.9
-      }
-    },
-    {
-      "query_id": "17",
-      "query": "What are the credit hour requirements for bachelor programs at NUST?",
-      "answer_length": 828,
-      "num_sources": 10,
-      "citation": {
-        "citation_count": 4,
-        "unique_citations": 4,
-        "citation_coverage": 0.364,
-        "expected_sources_found": 2,
-        "expected_sources_total": 2,
         "expected_sources_recall": 1.0,
         "page_accuracy": null,
         "format_quality": 1.0,
@@ -738,42 +550,68 @@
         "simple_citations": 0
       },
       "faithfulness": {
-        "faithfulness_score": 0.9,
-        "reasoning": "The answer accurately reflects that credit hour requirements are approved by the NUST Academic Council and implies that each program has distinct requirements, which is supported by the sources.",
+        "faithfulness_score": 0.8,
+        "reasoning": "The answer correctly identifies that NUST comprises 21 constituent institutions and mentions the Military College of Engineering, but it does not provide a complete list of institutions as implied by the sources.",
         "unsupported_claims": "None",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 9  \nReasoning: The answer accurately reflects that credit hour requirements are approved by the NUST Academic Council and implies that each program has distinct requirements, which is supported by the sources.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 8/10  \nReasoning: The answer correctly identifies that NUST comprises 21 constituent institutions and mentions the Military College of Engineering, but it does not provide a complete list of institutions as implied by the sources.  \nUnsupported: None"
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.091,
-        "key_terms_coverage": 0.125
+        "word_overlap_with_expected": 0.276,
+        "key_terms_coverage": 0.312
       },
       "latency": {
-        "query_id": "17",
-        "retrieval_ms": 5173.93,
-        "generation_ms": 2357.82,
-        "total_ms": 7531.76
+        "query_id": "14",
+        "retrieval_ms": 5924.4,
+        "generation_ms": 4089.91,
+        "total_ms": 10014.31
       }
     },
     {
-      "query_id": "18",
-      "query": "What is the priority for hostel allotment at NUST?",
-      "answer_length": 860,
+      "query_id": "15",
+      "query": "What are the credit hour requirements for bachelor programs at NUST?",
+      "answer_length": 825,
       "num_sources": 10,
       "citation": {
-        "citation_count": 4,
-        "unique_citations": 4,
-        "citation_coverage": 0.286,
+        "citation_count": 3,
+        "unique_citations": 3,
+        "expected_sources_found": 1,
+        "expected_sources_total": 2,
+        "expected_sources_recall": 0.5,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.9,
+        "reasoning": "The answer accurately reflects that the minimum credit hour requirements for bachelor programs at NUST are determined by the Academic Council, and it correctly notes that specific details are not provided in the sources, allowing for reasonable inference.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 9  \nReasoning: The answer accurately reflects that the minimum credit hour requirements for bachelor programs at NUST are determined by the Academic Council, and it correctly notes that specific details are not provided in the sources, allowing for reasonable inference.  \nUnsupported: None"
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.182,
+        "key_terms_coverage": 0.125
+      },
+      "latency": {
+        "query_id": "15",
+        "retrieval_ms": 4939.03,
+        "generation_ms": 3826.74,
+        "total_ms": 8765.77
+      }
+    },
+    {
+      "query_id": "16",
+      "query": "What is the priority for hostel allotment at NUST?",
+      "answer_length": 887,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
         "expected_sources_found": 2,
         "expected_sources_total": 3,
         "expected_sources_recall": 0.667,
@@ -791,88 +629,68 @@
         "evaluation_method": "llm",
         "llm_response": "Score: 10  \nReasoning: Every claim made in the answer regarding the priority for hostel allotment at NUST is directly stated in the provided sources.  \nUnsupported: None"
       },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
       "answer_quality": {
         "word_overlap_with_expected": 0.111,
         "key_terms_coverage": 0.1
       },
       "latency": {
-        "query_id": "18",
-        "retrieval_ms": 6404.4,
-        "generation_ms": 3674.11,
-        "total_ms": 10078.51
+        "query_id": "16",
+        "retrieval_ms": 5479.72,
+        "generation_ms": 6099.27,
+        "total_ms": 11579.0
       }
     },
     {
-      "query_id": "19",
+      "query_id": "17",
       "query": "What are the eligibility criteria for PEEF scholarships at NUST?",
-      "answer_length": 1983,
+      "answer_length": 1738,
       "num_sources": 10,
       "citation": {
-        "citation_count": 5,
-        "unique_citations": 5,
-        "citation_coverage": 0.227,
-        "expected_sources_found": 1,
+        "citation_count": 4,
+        "unique_citations": 4,
+        "expected_sources_found": 2,
         "expected_sources_total": 2,
-        "expected_sources_recall": 0.5,
+        "expected_sources_recall": 1.0,
         "page_accuracy": null,
         "format_quality": 1.0,
         "citations_valid": true,
-        "detailed_citations": 6,
+        "detailed_citations": 7,
         "simple_citations": 0
       },
       "faithfulness": {
         "faithfulness_score": 1.0,
-        "reasoning": "Every claim made in the answer is directly supported or clearly implied by the provided sources regarding the eligibility criteria for PEEF scholarships at NUST.",
+        "reasoning": "Every claim made in the answer regarding the eligibility criteria for PEEF scholarships at NUST is directly stated or clearly implied by the provided sources.",
         "unsupported_claims": "None",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported or clearly implied by the provided sources regarding the eligibility criteria for PEEF scholarships at NUST.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer regarding the eligibility criteria for PEEF scholarships at NUST is directly stated or clearly implied by the provided sources.  \nUnsupported: None"
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.714,
-        "key_terms_coverage": 0.556
+        "word_overlap_with_expected": 0.571,
+        "key_terms_coverage": 0.444
       },
       "latency": {
-        "query_id": "19",
-        "retrieval_ms": 5769.7,
-        "generation_ms": 9455.58,
-        "total_ms": 15225.28
+        "query_id": "17",
+        "retrieval_ms": 4911.49,
+        "generation_ms": 8732.03,
+        "total_ms": 13643.52
       }
     },
     {
-      "query_id": "20",
+      "query_id": "18",
       "query": "How do I apply for need-based financial aid at NUST?",
-      "answer_length": 1460,
+      "answer_length": 1378,
       "num_sources": 10,
       "citation": {
-        "citation_count": 3,
-        "unique_citations": 3,
-        "citation_coverage": 0.143,
-        "expected_sources_found": 3,
+        "citation_count": 4,
+        "unique_citations": 4,
+        "expected_sources_found": 4,
         "expected_sources_total": 5,
-        "expected_sources_recall": 0.6,
+        "expected_sources_recall": 0.8,
         "page_accuracy": null,
         "format_quality": 1.0,
         "citations_valid": true,
-        "detailed_citations": 6,
+        "detailed_citations": 7,
         "simple_citations": 0
       },
       "faithfulness": {
@@ -883,176 +701,172 @@
         "evaluation_method": "llm",
         "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the provided sources, including the steps for applying for need-based financial aid at NUST.  \nUnsupported: None"
       },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
       "answer_quality": {
-        "word_overlap_with_expected": 0.286,
+        "word_overlap_with_expected": 0.321,
         "key_terms_coverage": 0.143
       },
       "latency": {
-        "query_id": "20",
-        "retrieval_ms": 5888.4,
-        "generation_ms": 7590.58,
-        "total_ms": 13478.99
+        "query_id": "18",
+        "retrieval_ms": 5156.35,
+        "generation_ms": 7054.09,
+        "total_ms": 12210.44
       }
     },
     {
-      "query_id": "21",
+      "query_id": "19",
       "query": "What happens if I don't submit my scholarship supporting documents on time?",
-      "answer_length": 901,
+      "answer_length": 1061,
       "num_sources": 10,
       "citation": {
-        "citation_count": 5,
-        "unique_citations": 5,
-        "citation_coverage": 0.5,
+        "citation_count": 3,
+        "unique_citations": 3,
         "expected_sources_found": 0,
         "expected_sources_total": 4,
         "expected_sources_recall": 0.0,
         "page_accuracy": null,
         "format_quality": 1.0,
         "citations_valid": true,
-        "detailed_citations": 8,
+        "detailed_citations": 6,
         "simple_citations": 0
       },
       "faithfulness": {
         "faithfulness_score": 1.0,
-        "reasoning": "Every claim made in the answer is directly supported by the sources, particularly the cancellation of the application for failing to submit documents on time.",
+        "reasoning": "Every claim made in the answer is directly supported by the provided sources, particularly regarding the consequences of not submitting documents on time and the importance of deadline compliance.",
         "unsupported_claims": "None",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the sources, particularly the cancellation of the application for failing to submit documents on time.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the provided sources, particularly regarding the consequences of not submitting documents on time and the importance of deadline compliance.  \nUnsupported: None"
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.8,
-        "key_terms_coverage": 0.714
+        "word_overlap_with_expected": 0.65,
+        "key_terms_coverage": 0.5
       },
       "latency": {
-        "query_id": "21",
-        "retrieval_ms": 5731.85,
-        "generation_ms": 3654.19,
-        "total_ms": 9386.04
+        "query_id": "19",
+        "retrieval_ms": 5731.89,
+        "generation_ms": 6149.06,
+        "total_ms": 11880.96
       }
     },
     {
-      "query_id": "23",
+      "query_id": "20",
       "query": "What are the charges for transcript issuance at NUST?",
-      "answer_length": 865,
+      "answer_length": 1053,
       "num_sources": 10,
       "citation": {
         "citation_count": 4,
         "unique_citations": 4,
-        "citation_coverage": 0.364,
         "expected_sources_found": 1,
         "expected_sources_total": 3,
         "expected_sources_recall": 0.333,
         "page_accuracy": null,
         "format_quality": 1.0,
         "citations_valid": true,
-        "detailed_citations": 6,
+        "detailed_citations": 5,
         "simple_citations": 0
       },
       "faithfulness": {
-        "faithfulness_score": 0.8,
-        "reasoning": "The answer accurately states the normal transcript fee and acknowledges the lack of a specified urgent transcript fee, which is implied in the sources, but does not provide the exact fee for urgent requests.",
-        "unsupported_claims": "The exact fee for the urgent transcript is not provided in the sources.",
+        "faithfulness_score": 0.9,
+        "reasoning": "Most claims in the answer are well-supported by the sources, particularly regarding the normal transcript charge and the requirement for a bank receipt, though the urgent transcript charges are not specified.",
+        "unsupported_claims": "Charges for urgent processing are not specified in the provided documents.",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 8/10  \nReasoning: The answer accurately states the normal transcript fee and acknowledges the lack of a specified urgent transcript fee, which is implied in the sources, but does not provide the exact fee for urgent requests.  \nUnsupported: The exact fee for the urgent transcript is not provided in the sources."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 9  \nReasoning: Most claims in the answer are well-supported by the sources, particularly regarding the normal transcript charge and the requirement for a bank receipt, though the urgent transcript charges are not specified.  \nUnsupported: Charges for urgent processing are not specified in the provided documents."
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.308,
+        "word_overlap_with_expected": 0.231,
         "key_terms_coverage": 0.167
       },
       "latency": {
-        "query_id": "23",
-        "retrieval_ms": 5080.3,
-        "generation_ms": 4856.2,
-        "total_ms": 9936.5
+        "query_id": "20",
+        "retrieval_ms": 4884.29,
+        "generation_ms": 4991.43,
+        "total_ms": 9875.72
       }
     },
     {
-      "query_id": "28",
+      "query_id": "21",
       "query": "What is the tuition fee for undergraduate engineering programs for national students?",
-      "answer_length": 748,
+      "answer_length": 739,
       "num_sources": 10,
       "citation": {
         "citation_count": 4,
         "unique_citations": 4,
-        "citation_coverage": 0.4,
         "expected_sources_found": 2,
         "expected_sources_total": 3,
         "expected_sources_recall": 0.667,
         "page_accuracy": null,
         "format_quality": 1.0,
         "citations_valid": true,
-        "detailed_citations": 5,
+        "detailed_citations": 6,
         "simple_citations": 0
       },
       "faithfulness": {
         "faithfulness_score": 0.4,
-        "reasoning": "The answer incorrectly states the tuition fee for undergraduate engineering programs as PKR 197,050 per semester, while both sources indicate it is PKR 171,350 per semester.",
+        "reasoning": "The answer incorrectly states the tuition fee as PKR 197,050 per semester, while both sources indicate it is PKR 171,350 per semester for engineering programs.",
         "unsupported_claims": "Tuition fee of PKR 197,050 per semester.",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 4  \nReasoning: The answer incorrectly states the tuition fee for undergraduate engineering programs as PKR 197,050 per semester, while both sources indicate it is PKR 171,350 per semester.  \nUnsupported: Tuition fee of PKR 197,050 per semester."
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 4  \nReasoning: The answer incorrectly states the tuition fee as PKR 197,050 per semester, while both sources indicate it is PKR 171,350 per semester for engineering programs.  \nUnsupported: Tuition fee of PKR 197,050 per semester."
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.538,
-        "key_terms_coverage": 0.588
+        "word_overlap_with_expected": 0.577,
+        "key_terms_coverage": 0.647
       },
       "latency": {
-        "query_id": "28",
-        "retrieval_ms": 5073.26,
-        "generation_ms": 4013.69,
-        "total_ms": 9086.95
+        "query_id": "21",
+        "retrieval_ms": 5390.46,
+        "generation_ms": 3637.49,
+        "total_ms": 9027.96
       }
     },
     {
-      "query_id": "29",
+      "query_id": "22",
       "query": "What facilities are available in NUST hostels?",
-      "answer_length": 1023,
+      "answer_length": 892,
       "num_sources": 10,
       "citation": {
-        "citation_count": 5,
-        "unique_citations": 5,
-        "citation_coverage": 0.278,
-        "expected_sources_found": 1,
+        "citation_count": 6,
+        "unique_citations": 6,
+        "expected_sources_found": 2,
         "expected_sources_total": 4,
-        "expected_sources_recall": 0.25,
+        "expected_sources_recall": 0.5,
+        "page_accuracy": null,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.9,
+        "reasoning": "Most claims in the answer are well-supported by the sources, with only minor details that could be reasonably inferred.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 9  \nReasoning: Most claims in the answer are well-supported by the sources, with only minor details that could be reasonably inferred.  \nUnsupported: None"
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.474,
+        "key_terms_coverage": 0.385
+      },
+      "latency": {
+        "query_id": "22",
+        "retrieval_ms": 5170.37,
+        "generation_ms": 4393.05,
+        "total_ms": 9563.43
+      }
+    },
+    {
+      "query_id": "23",
+      "query": "How can I get an interest-free loan from Ihsan Trust through NUST?",
+      "answer_length": 1240,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 4,
+        "unique_citations": 4,
+        "expected_sources_found": 2,
+        "expected_sources_total": 5,
+        "expected_sources_recall": 0.4,
         "page_accuracy": null,
         "format_quality": 1.0,
         "citations_valid": true,
@@ -1061,76 +875,21 @@
       },
       "faithfulness": {
         "faithfulness_score": 1.0,
-        "reasoning": "Every claim made in the answer is directly supported by the information provided in the sources, including details about the facilities available in NUST hostels.",
+        "reasoning": "Every claim in the answer is directly supported by the sources, including the application process, contact information, and eligibility requirements for the interest-free loan from Ihsan Trust through NUST.",
         "unsupported_claims": "None",
         "num_sources_evaluated": 2,
         "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the information provided in the sources, including details about the facilities available in NUST hostels.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
+        "llm_response": "Score: 10  \nReasoning: Every claim in the answer is directly supported by the sources, including the application process, contact information, and eligibility requirements for the interest-free loan from Ihsan Trust through NUST.  \nUnsupported: None"
       },
       "answer_quality": {
-        "word_overlap_with_expected": 0.316,
-        "key_terms_coverage": 0.231
+        "word_overlap_with_expected": 0.321,
+        "key_terms_coverage": 0.2
       },
       "latency": {
-        "query_id": "29",
-        "retrieval_ms": 5490.66,
-        "generation_ms": 4359.66,
-        "total_ms": 9850.33
-      }
-    },
-    {
-      "query_id": "30",
-      "query": "How can I get an interest-free loan from Ihsan Trust through NUST?",
-      "answer_length": 1223,
-      "num_sources": 10,
-      "citation": {
-        "citation_count": 3,
-        "unique_citations": 3,
-        "citation_coverage": 0.176,
-        "expected_sources_found": 1,
-        "expected_sources_total": 5,
-        "expected_sources_recall": 0.2,
-        "page_accuracy": null,
-        "format_quality": 1.0,
-        "citations_valid": true,
-        "detailed_citations": 5,
-        "simple_citations": 0
-      },
-      "faithfulness": {
-        "faithfulness_score": 1.0,
-        "reasoning": "Every claim made in the answer is directly supported by the provided sources, including the application process, contact information, and details about the loan coverage and repayment options.",
-        "unsupported_claims": "None",
-        "num_sources_evaluated": 2,
-        "evaluation_method": "llm",
-        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the provided sources, including the application process, contact information, and details about the loan coverage and repayment options.  \nUnsupported: None"
-      },
-      "abstention": {
-        "system_abstained": false,
-        "should_abstain": false,
-        "appropriate": true,
-        "result": "correct_answer",
-        "no_sources": false,
-        "weak_sources": false,
-        "num_sources": 10
-      },
-      "answer_quality": {
-        "word_overlap_with_expected": 0.5,
-        "key_terms_coverage": 0.467
-      },
-      "latency": {
-        "query_id": "30",
-        "retrieval_ms": 5004.17,
-        "generation_ms": 5071.6,
-        "total_ms": 10075.77
+        "query_id": "23",
+        "retrieval_ms": 5496.51,
+        "generation_ms": 7190.85,
+        "total_ms": 12687.36
       }
     }
   ]

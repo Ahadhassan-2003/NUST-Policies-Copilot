@@ -111,7 +111,7 @@ def evaluate_citation_precision(
     
     Metrics:
     - Citation count: Number of citations in answer
-    - Citation coverage: % of sentences with citations
+    - Citation coverage: % of sentences with citations (COMMENTED OUT)
     - Expected sources found: Did we cite the expected documents?
     - Page accuracy: If pages provided, are they correct?
     - Format quality: Are citations detailed or simple?
@@ -125,8 +125,8 @@ def evaluate_citation_precision(
     sentences = [s.strip() for s in re.split(r'[.!?]+', answer) if s.strip()]
     sentences = [s for s in sentences if len(s) > 10]  # Filter very short sentences
     
-    # Citation coverage
-    citation_coverage = len(citation_numbers) / len(sentences) if sentences else 0
+    # Citation coverage - COMMENTED OUT
+    # citation_coverage = len(citation_numbers) / len(sentences) if sentences else 0
     
     # Check if expected sources are cited
     expected_doc_ids = gold.get('expected_doc_ids', [])
@@ -183,7 +183,7 @@ def evaluate_citation_precision(
     return {
         'citation_count': len(citation_numbers),
         'unique_citations': len(set(citation_numbers)),
-        'citation_coverage': round(citation_coverage, 3),
+        # 'citation_coverage': round(citation_coverage, 3),  # COMMENTED OUT
         'expected_sources_found': expected_sources_found,
         'expected_sources_total': len(expected_doc_ids_normalized),
         'expected_sources_recall': round(expected_sources_recall, 3),
@@ -275,13 +275,13 @@ Unsupported: [list specific unsupported claims, or write "None" if all supported
         response_text = response.content if hasattr(response, 'content') else str(response)
         
         # Parse response
-        score_match = re.search(r'Score:\s*(\d+(?:\.\d+)?)', response_text, re.IGNORECASE)
+        score_match = re.search(r'Score:\s*(\d+(?:\.\d+)?)', response_text, re.IGNORECASE) # type: ignore
         score = float(score_match.group(1)) / 10 if score_match else 0.5
         
-        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text, re.IGNORECASE)
+        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text, re.IGNORECASE) # type: ignore
         reasoning = reasoning_match.group(1).strip() if reasoning_match else "Unable to parse reasoning"
         
-        unsupported_match = re.search(r'Unsupported:\s*(.+?)(?:\n\n|\Z)', response_text, re.IGNORECASE | re.DOTALL)
+        unsupported_match = re.search(r'Unsupported:\s*(.+?)(?:\n\n|\Z)', response_text, re.IGNORECASE | re.DOTALL) # type: ignore
         unsupported = unsupported_match.group(1).strip() if unsupported_match else "Unable to parse"
         
         # Clean up unsupported claims
@@ -310,54 +310,54 @@ Unsupported: [list specific unsupported claims, or write "None" if all supported
 
 # ========= ABSTENTION APPROPRIATENESS ========= #
 
-@traceable(name="evaluate_abstention")
-def evaluate_abstention(
-    answer: str,
-    query: str,
-    sources: List[Dict[str, Any]],
-    gold: Dict[str, Any]
-) -> Dict[str, Any]:
-    """
-    Evaluate if abstention was appropriate.
-    
-    Checks:
-    - Did system abstain when it should?
-    - Did system answer when it should abstain?
-    """
-    
-    # Detect if system abstained
-    system_abstained = detect_abstention(answer)
-    
-    # Check gold standard
-    should_abstain = gold.get('should_abstain', False)
-    
-    # Determine appropriateness
-    if system_abstained and should_abstain:
-        result = "correct_abstention"
-        appropriate = True
-    elif not system_abstained and not should_abstain:
-        result = "correct_answer"
-        appropriate = True
-    elif system_abstained and not should_abstain:
-        result = "false_abstention"  # Abstained but shouldn't have
-        appropriate = False
-    else:  # not system_abstained and should_abstain
-        result = "false_confidence"  # Answered but should have abstained
-        appropriate = False
-    
-    # Additional context
-    no_sources = len(sources) == 0
-    weak_sources = len(sources) > 0 and all(doc.get('score', 0) < 0.5 for doc in sources)
-    
-    return {
-        'system_abstained': system_abstained,
-        'should_abstain': should_abstain,
-        'appropriate': appropriate,
-        'result': result,
-        'no_sources': no_sources,
-        'weak_sources': weak_sources,
-        'num_sources': len(sources)
-    }
+# @traceable(name="evaluate_abstention")
+# def evaluate_abstention(
+#     answer: str,
+#     query: str,
+#     sources: List[Dict[str, Any]],
+#     gold: Dict[str, Any]
+# ) -> Dict[str, Any]:
+#     """
+#     Evaluate if abstention was appropriate.
+#     
+#     Checks:
+#     - Did system abstain when it should?
+#     - Did system answer when it should abstain?
+#     """
+#     
+#     # Detect if system abstained
+#     system_abstained = detect_abstention(answer)
+#     
+#     # Check gold standard
+#     should_abstain = gold.get('should_abstain', False)
+#     
+#     # Determine appropriateness
+#     if system_abstained and should_abstain:
+#         result = "correct_abstention"
+#         appropriate = True
+#     elif not system_abstained and not should_abstain:
+#         result = "correct_answer"
+#         appropriate = True
+#     elif system_abstained and not should_abstain:
+#         result = "false_abstention"  # Abstained but shouldn't have
+#         appropriate = False
+#     else:  # not system_abstained and should_abstain
+#         result = "false_confidence"  # Answered but should have abstained
+#         appropriate = False
+#     
+#     # Additional context
+#     no_sources = len(sources) == 0
+#     weak_sources = len(sources) > 0 and all(doc.get('score', 0) < 0.5 for doc in sources)
+#     
+#     return {
+#         'system_abstained': system_abstained,
+#         'should_abstain': should_abstain,
+#         'appropriate': appropriate,
+#         'result': result,
+#         'no_sources': no_sources,
+#         'weak_sources': weak_sources,
+#         'num_sources': len(sources)
+#     }
 
 # ========= LATENCY TRACKING ========= #
 
@@ -489,9 +489,9 @@ def evaluate_single_query(
             'evaluation_method': 'llm'
         }
     
-    # Abstention
-    abstention_metrics = evaluate_abstention(answer, query, sources, gold)
-    results['abstention'] = abstention_metrics
+    # Abstention - COMMENTED OUT
+    # abstention_metrics = evaluate_abstention(answer, query, sources, gold)
+    # results['abstention'] = abstention_metrics
     
     # Answer Quality (if expected answer provided)
     if gold.get('expected_answer'):
@@ -512,12 +512,12 @@ def aggregate_metrics(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         'total_queries': len(all_results),
         'citation': {},
         'faithfulness': {},
-        'abstention': {},
+        # 'abstention': {},  # COMMENTED OUT
         'answer_quality': {}
     }
     
-    # Citation metrics
-    citation_keys = ['citation_count', 'citation_coverage', 'expected_sources_recall', 
+    # Citation metrics - REMOVED citation_coverage from list
+    citation_keys = ['citation_count', 'expected_sources_recall', 
                      'format_quality', 'page_accuracy']
     for key in citation_keys:
         values = [r['citation'][key] for r in all_results if r['citation'].get(key) is not None]
@@ -548,19 +548,19 @@ def aggregate_metrics(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         if num_sources_evaluated:
             aggregated['faithfulness']['avg_sources_evaluated'] = round(np.mean(num_sources_evaluated), 2)
     
-    # Abstention metrics
-    abstention_counts = Counter(r['abstention']['result'] for r in all_results)
-    total = len(all_results)
-    
-    aggregated['abstention'] = {
-        'abstention_rate': round(sum(r['abstention']['system_abstained'] for r in all_results) / total, 3),
-        'should_abstain_rate': round(sum(r['abstention']['should_abstain'] for r in all_results) / total, 3),
-        'appropriate_rate': round(sum(r['abstention']['appropriate'] for r in all_results) / total, 3),
-        'correct_abstentions': abstention_counts.get('correct_abstention', 0),
-        'correct_answers': abstention_counts.get('correct_answer', 0),
-        'false_abstentions': abstention_counts.get('false_abstention', 0),
-        'false_confidence': abstention_counts.get('false_confidence', 0)
-    }
+    # Abstention metrics - COMMENTED OUT
+    # abstention_counts = Counter(r['abstention']['result'] for r in all_results)
+    # total = len(all_results)
+    # 
+    # aggregated['abstention'] = {
+    #     'abstention_rate': round(sum(r['abstention']['system_abstained'] for r in all_results) / total, 3),
+    #     'should_abstain_rate': round(sum(r['abstention']['should_abstain'] for r in all_results) / total, 3),
+    #     'appropriate_rate': round(sum(r['abstention']['appropriate'] for r in all_results) / total, 3),
+    #     'correct_abstentions': abstention_counts.get('correct_abstention', 0),
+    #     'correct_answers': abstention_counts.get('correct_answer', 0),
+    #     'false_abstentions': abstention_counts.get('false_abstention', 0),
+    #     'false_confidence': abstention_counts.get('false_confidence', 0)
+    # }
     
     # Answer quality (if available)
     if any('answer_quality' in r for r in all_results):
@@ -583,11 +583,11 @@ def print_evaluation_summary(aggregated: Dict[str, Any]):
     if total_queries is not None and total_queries > 0:
         print(f"\nTotal Queries Evaluated: {total_queries}")
     
-    # Citation Metrics
+    # Citation Metrics - REMOVED citation_coverage from display
     print("\n--- Citation Quality ---")
     cit = aggregated.get('citation', {})
     print(f"  Average Citations per Answer: {cit.get('citation_count_mean', 0):.2f}")
-    print(f"  Citation Coverage: {cit.get('citation_coverage_mean', 0):.3f}")
+    # print(f"  Citation Coverage: {cit.get('citation_coverage_mean', 0):.3f}")  # COMMENTED OUT
     print(f"  Expected Sources Recall: {cit.get('expected_sources_recall_mean', 0):.3f}")
     print(f"  Format Quality (detailed): {cit.get('format_quality_mean', 0):.3f}")
     if cit.get('page_accuracy_mean') is not None:
@@ -604,17 +604,17 @@ def print_evaluation_summary(aggregated: Dict[str, Any]):
     else:
         print("  No faithfulness data available")
     
-    # Abstention Metrics
-    print("\n--- Abstention Behavior ---")
-    abst = aggregated.get('abstention', {})
-    print(f"  System Abstention Rate: {abst.get('abstention_rate', 0):.3f}")
-    print(f"  Should Abstain Rate (gold): {abst.get('should_abstain_rate', 0):.3f}")
-    print(f"  Appropriate Behavior Rate: {abst.get('appropriate_rate', 0):.3f}")
-    print(f"  Breakdown:")
-    print(f"    Correct Answers: {abst.get('correct_answers', 0)}")
-    print(f"    Correct Abstentions: {abst.get('correct_abstentions', 0)}")
-    print(f"    False Abstentions: {abst.get('false_abstentions', 0)}")
-    print(f"    False Confidence: {abst.get('false_confidence', 0)}")
+    # Abstention Metrics - COMMENTED OUT
+    # print("\n--- Abstention Behavior ---")
+    # abst = aggregated.get('abstention', {})
+    # print(f"  System Abstention Rate: {abst.get('abstention_rate', 0):.3f}")
+    # print(f"  Should Abstain Rate (gold): {abst.get('should_abstain_rate', 0):.3f}")
+    # print(f"  Appropriate Behavior Rate: {abst.get('appropriate_rate', 0):.3f}")
+    # print(f"  Breakdown:")
+    # print(f"    Correct Answers: {abst.get('correct_answers', 0)}")
+    # print(f"    Correct Abstentions: {abst.get('correct_abstentions', 0)}")
+    # print(f"    False Abstentions: {abst.get('false_abstentions', 0)}")
+    # print(f"    False Confidence: {abst.get('false_confidence', 0)}")
     
     # Answer Quality
     if aggregated.get('answer_quality'):

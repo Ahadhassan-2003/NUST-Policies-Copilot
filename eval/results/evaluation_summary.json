@@ -6,71 +6,60 @@
   },
   "total_queries": 23,
   "retrieval": {
-    "hit_rate": {
+    "recall": {
       "1": 0.782608695652174,
       "3": 0.9565217391304348,
       "5": 1.0,
       "10": 1.0
     },
     "ndcg": {
-      "3": 0.8915624544991231,
-      "5": 0.9101086701792648,
-      "10": 0.9016895092130843
+      "3": 0.895052854970941,
+      "5": 0.9134506982845695,
+      "10": 0.9045596990613957
     }
   },
   "generation_summary": {
     "total_queries": 23,
     "citation": {
-      "citation_count_mean": 4.261,
-      "citation_count_std": 0.845,
-      "citation_coverage_mean": 0.355,
-      "citation_coverage_std": 0.126,
-      "expected_sources_recall_mean": 0.645,
-      "expected_sources_recall_std": 0.284,
+      "citation_count_mean": 4.043,
+      "citation_count_std": 1.042,
+      "expected_sources_recall_mean": 0.641,
+      "expected_sources_recall_std": 0.262,
       "format_quality_mean": 1.0,
       "format_quality_std": 0.0
     },
     "faithfulness": {
-      "faithfulness_score_mean": 0.857,
-      "faithfulness_score_std": 0.197,
-      "faithfulness_score_min": 0.4,
+      "faithfulness_score_mean": 0.817,
+      "faithfulness_score_std": 0.253,
+      "faithfulness_score_min": 0.0,
       "faithfulness_score_max": 1.0,
       "evaluation_method": "llm",
       "avg_sources_evaluated": 2.0
     },
-    "abstention": {
-      "abstention_rate": 0.0,
-      "should_abstain_rate": 0.0,
-      "appropriate_rate": 1.0,
-      "correct_abstentions": 0,
-      "correct_answers": 23,
-      "false_abstentions": 0,
-      "false_confidence": 0
-    },
     "answer_quality": {
-      "word_overlap_mean": 0.394
+      "word_overlap_mean": 0.384
     },
     "latency": {
       "retrieval_ms": {
-        "mean": 5905.13,
-        "median": 5785.04,
-        "std": 756.67,
-        "p95": 7292.07,
-        "p99": 8066.85
+        "mean": 5629.28,
+        "median": 5422.26,
+        "std": 1012.63,
+        "p95": 7470.75,
+        "p99": 8731.27
       },
       "generation_ms": {
-        "mean": 4920.96,
-        "median": 4856.2,
-        "std": 1688.91,
-        "p95": 7572.12,
-        "p99": 9045.28
+        "mean": 6039.8,
+        "median": 5810.66,
+        "std": 2175.36,
+        "p95": 10422.4,
+        "p99": 11976.95
       },
       "total_ms": {
-        "mean": 10826.1,
-        "median": 10974.1,
-        "std": 1836.54,
-        "p95": 13475.88,
-        "p99": 14841.1
+        "mean": 11669.08,
+        "median": 11716.77,
+        "std": 2361.32,
+        "p95": 15878.23,
+        "p99": 17409.86
       }
     }
   }

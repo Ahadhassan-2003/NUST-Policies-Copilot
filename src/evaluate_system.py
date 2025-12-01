@@ -176,7 +176,7 @@ def load_gold_set(gold_path: Path) -> List[Dict]:
     
     return golds
 
-# ========= RETRIEVAL EVALUATION (FIXED WITH HIT RATE) ========= #
+# ========= RETRIEVAL EVALUATION (RENAMED: Hit Rate -> Recall) ========= #
 
 @traceable(name="evaluate_retrieval_metrics")
 def evaluate_retrieval_metrics(
@@ -188,9 +188,9 @@ def evaluate_retrieval_metrics(
     k: int = 10
 ) -> Dict[str, Any]:
     """
-    Evaluate retrieval performance using Hit Rate@k and nDCG@k.
+    Evaluate retrieval performance using Recall@k and nDCG@k.
     
-    Hit Rate@k (also called Recall@k in RAG contexts):
+    Recall@k (formerly Hit Rate@k):
     - Binary metric: 1 if at least one relevant doc in top k, 0 otherwise
     - More realistic for RAG than traditional recall (relevant_in_k / total_relevant_in_corpus)
     
@@ -199,7 +199,7 @@ def evaluate_retrieval_metrics(
     - Higher scores = relevant docs ranked higher
     """
     metrics = {
-        "hit_rate": {1: [], 3: [], 5: [], 10: []},  # Changed from "recall"
+        "recall": {1: [], 3: [], 5: [], 10: []},  # RENAMED from "hit_rate"
         "ndcg": {3: [], 5: [], 10: []}
     }
     
@@ -213,10 +213,10 @@ def evaluate_retrieval_metrics(
         # Get relevance scores for each retrieved doc
         rel_scores = [1 if is_relevant(r, gold) else 0 for r in retrieved]
         
-        # Hit Rate@k: Did we find at least one relevant doc in top k?
+        # Recall@k: Did we find at least one relevant doc in top k?
         for kk in [1, 3, 5, 10]:
             has_relevant = any(rel_scores[:kk])
-            metrics["hit_rate"][kk].append(1.0 if has_relevant else 0.0)
+            metrics["recall"][kk].append(1.0 if has_relevant else 0.0)
         
         # nDCG@k: How well are relevant docs ranked?
         # Only compute if we have at least one relevant doc
@@ -237,11 +237,11 @@ def evaluate_retrieval_metrics(
                 metrics["ndcg"][kk].append(0.0)
     
     # Compute averages
-    avg_hit_rate = {k: np.mean(v) if v else 0.0 for k, v in metrics["hit_rate"].items()}
+    avg_recall = {k: np.mean(v) if v else 0.0 for k, v in metrics["recall"].items()}
     avg_ndcg = {k: np.mean(v) if v else 0.0 for k, v in metrics["ndcg"].items()}
     
     return {
-        "hit_rate": avg_hit_rate,  # Changed from "recall"
+        "recall": avg_recall,  # RENAMED from "hit_rate"
         "ndcg": avg_ndcg
     }
 
@@ -261,7 +261,7 @@ def evaluate_generation_metrics(
     Evaluate generation quality with new metrics:
     - Citation Precision
     - Faithfulness/AIS (LLM-based, top K sources only)
-    - Abstention Appropriateness
+    - Abstention Appropriateness (COMMENTED OUT)
     - Latency
     
     Args:
@@ -429,14 +429,14 @@ def evaluate_full_system(
         golds, chunks, bm25_retriever, openai_vs, bge_vs, k=k
     )
     
-    print("\nRetrieval Metrics (Hit Rate = % queries with ≥1 relevant doc in top k):")
-    print(f"  Hit Rate@1:  {retrieval_metrics['hit_rate'][1]:.4f}")
-    print(f"  Hit Rate@3:  {retrieval_metrics['hit_rate'][3]:.4f}")
-    print(f"  Hit Rate@5:  {retrieval_metrics['hit_rate'][5]:.4f}")
-    print(f"  Hit Rate@10: {retrieval_metrics['hit_rate'][10]:.4f}")
-    print(f"  nDCG@3:      {retrieval_metrics['ndcg'][3]:.4f}")
-    print(f"  nDCG@5:      {retrieval_metrics['ndcg'][5]:.4f}")
-    print(f"  nDCG@10:     {retrieval_metrics['ndcg'][10]:.4f}")
+    print("\nRetrieval Metrics (Recall = % queries with ≥1 relevant doc in top k):")
+    print(f"  Recall@1:  {retrieval_metrics['recall'][1]:.4f}")
+    print(f"  Recall@3:  {retrieval_metrics['recall'][3]:.4f}")
+    print(f"  Recall@5:  {retrieval_metrics['recall'][5]:.4f}")
+    print(f"  Recall@10: {retrieval_metrics['recall'][10]:.4f}")
+    print(f"  nDCG@3:    {retrieval_metrics['ndcg'][3]:.4f}")
+    print(f"  nDCG@5:    {retrieval_metrics['ndcg'][5]:.4f}")
+    print(f"  nDCG@10:   {retrieval_metrics['ndcg'][10]:.4f}")
     
     # 2. Evaluate Generation
     print("\n" + "="*70)
