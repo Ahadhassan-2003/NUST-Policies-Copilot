@@ -25,11 +25,8 @@ from evaluation_metrics import (
 
 load_dotenv()
 
-# Initialize LangSmith
-os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot - Evaluation"
-
 # ========= PATHS ========= #
-GOLD_SET_PATH = Path("./eval/final_set.jsonl")
+GOLD_SET_PATH = Path("./eval/final_gold_set.jsonl")
 RESULTS_PATH = Path("./eval/results")
 
 # ========= HELPER FUNCTIONS FROM OLD EVALUATOR ========= #
