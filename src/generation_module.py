@@ -210,7 +210,9 @@ def generate_see_also(context: List[Dict[str, Any]], used_citations: List[int]) 
                 section_short = section[:50] + "..." if len(section) > 50 else section
                 citation_parts.append(f"§{section_short}")
             
-            citation_display = ", ".join(citation_parts)
+            # FIX: Ensure all elements in the sequence are strings before calling .join()
+            str_citation_parts = [str(part) for part in citation_parts]
+            citation_display = ", ".join(str_citation_parts)
             
             see_also.append({
                 'title': doc_id,
@@ -229,11 +231,11 @@ def chat_node(state: ChatbotState):
     """Main chat node that generates responses with citations."""
     
     # # Initialize LLM
-    # llm = ChatOllama(
-    #     model="qwen2.5:3b-instruct-q4_K_M",
-    #     temperature=0.5,
-    #     num_predict=1024
-    # )
+    # # llm = ChatOllama(
+    # #     model="qwen2.5:3b-instruct-q4_K_M",
+    # #     temperature=0.5,
+    # #     num_predict=1024
+    # # )
     
     # Initialize LLM
     llm = ChatOpenAI(

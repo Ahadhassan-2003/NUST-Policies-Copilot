@@ -212,8 +212,8 @@ def evaluate_faithfulness_llm(
         answer: Generated answer to evaluate
         sources: Retrieved source documents
         query: Original query
-        top_k: Number of top sources to consider (default: 2)
         model: LLM model to use for evaluation
+        top_k: Number of top sources to consider (default: 2)
     
     Returns:
         Dict with faithfulness score and details
@@ -232,7 +232,6 @@ def evaluate_faithfulness_llm(
         }
     
     try:
-        from langchain_openai import ChatOpenAI
         llm = ChatOpenAI(model=model, temperature=0)
         
         # Format sources with clear numbering
@@ -306,78 +305,6 @@ Unsupported: [list specific unsupported claims, or write "None" if all supported
             'unsupported_claims': "Error during evaluation",
             'num_sources_evaluated': len(top_sources),
             'evaluation_method': 'llm',
-            'llm_response': None
-        }
-
-@traceable(name="evaluate_faithfulness_llm")
-def evaluate_faithfulness_llm(
-    answer: str, 
-    sources: List[Dict[str, Any]], 
-    query: str,
-    model: str = "ibm/granite4:latest"
-) -> Dict[str, Any]:
-    """
-    Advanced faithfulness check using LLM as judge.
-    
-    The LLM evaluates if the answer is fully supported by sources.
-    """
-    
-    try:
-        llm = ChatOllama(model=model, temperature=0)
-        
-        # Format sources
-        sources_text = "\n\n".join([
-            f"Source {i+1}:\n{doc['text'][:500]}"
-            for i, doc in enumerate(sources[:5])  # Limit to top 5 sources
-        ])
-        
-        prompt = f"""You are evaluating if an AI assistant's answer is fully supported by the provided sources.
-
-Query: {query}
-
-Answer: {answer}
-
-Sources:
-{sources_text}
-
-Evaluate the answer on a scale of 0-10:
-- 10: Every claim in the answer is directly supported by the sources
-- 7-9: Most claims supported, minor unsupported details
-- 4-6: Some claims supported, some unsupported or inferred
-- 1-3: Few claims supported, mostly unsupported
-- 0: Answer contradicts sources or is completely unsupported
-
-Respond in this exact format:
-Score: [0-10]
-Reasoning: [one sentence explaining the score]
-Unsupported claims: [list any claims not found in sources, or "None"]"""
-
-        response = llm.invoke(prompt)
-        response_text = response.content if hasattr(response, 'content') else str(response)
-        
-        # Parse response
-        score_match = re.search(r'Score:\s*(\d+)', response_text)
-        score = int(score_match.group(1)) / 10 if score_match else 0.5
-        
-        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text)
-        reasoning = reasoning_match.group(1).strip() if reasoning_match else ""
-        
-        unsupported_match = re.search(r'Unsupported claims:\s*(.+?)(?:\n\n|$)', response_text, re.DOTALL)
-        unsupported = unsupported_match.group(1).strip() if unsupported_match else ""
-        
-        return {
-            'faithfulness_score_llm': round(score, 3),
-            'reasoning': reasoning,
-            'unsupported_claims': unsupported,
-            'llm_response': response_text
-        }
-    
-    except Exception as e:
-        print(f"Warning: LLM faithfulness evaluation failed: {e}")
-        return {
-            'faithfulness_score_llm': None,
-            'reasoning': f"Error: {str(e)}",
-            'unsupported_claims': "Error during evaluation",
             'llm_response': None
         }
 
@@ -591,7 +518,7 @@ def aggregate_metrics(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
     
     # Citation metrics
     citation_keys = ['citation_count', 'citation_coverage', 'expected_sources_recall', 
-                    'format_quality', 'page_accuracy']
+                     'format_quality', 'page_accuracy']
     for key in citation_keys:
         values = [r['citation'][key] for r in all_results if r['citation'].get(key) is not None]
         if values:
@@ -638,7 +565,7 @@ def aggregate_metrics(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
     # Answer quality (if available)
     if any('answer_quality' in r for r in all_results):
         quality_values = [r['answer_quality']['word_overlap_with_expected'] 
-                        for r in all_results if 'answer_quality' in r]
+                         for r in all_results if 'answer_quality' in r]
         if quality_values:
             aggregated['answer_quality']['word_overlap_mean'] = round(np.mean(quality_values), 3)
     
@@ -651,8 +578,9 @@ def print_evaluation_summary(aggregated: Dict[str, Any]):
     print("EVALUATION SUMMARY")
     print("="*70)
     
-    total_queries = aggregated.get('total_queries', 0)
-    if total_queries > 0:
+    # Handle total_queries safely
+    total_queries = aggregated.get('total_queries')
+    if total_queries is not None and total_queries > 0:
         print(f"\nTotal Queries Evaluated: {total_queries}")
     
     # Citation Metrics
@@ -694,4 +622,4 @@ def print_evaluation_summary(aggregated: Dict[str, Any]):
         qual = aggregated['answer_quality']
         print(f"  Word Overlap with Expected: {qual.get('word_overlap_mean', 0):.3f}")
     
-    print("\n" + "="*70);
+    print("\n" + "="*70)

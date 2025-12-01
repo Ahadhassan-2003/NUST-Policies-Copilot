@@ -14,34 +14,344 @@
     },
     "ndcg": {
       "3": 0.7718216255952429,
-      "5": 0.8606481612170568,
-      "10": 0.8643685828599869
+      "5": 0.8634994808909422,
+      "10": 0.8660033365599342
     }
   },
   "generation": {
+    "total_queries": 6,
+    "citation": {
+      "citation_count_mean": 4.5,
+      "citation_count_std": 1.118,
+      "citation_coverage_mean": 0.377,
+      "citation_coverage_std": 0.101,
+      "expected_sources_recall_mean": 0.722,
+      "expected_sources_recall_std": 0.208,
+      "format_quality_mean": 1.0,
+      "format_quality_std": 0.0,
+      "page_accuracy_mean": 0.333,
+      "page_accuracy_std": 0.471
+    },
+    "faithfulness": {
+      "faithfulness_score_mean": 0.867,
+      "faithfulness_score_std": 0.149,
+      "faithfulness_score_min": 0.6,
+      "faithfulness_score_max": 1.0,
+      "evaluation_method": "llm",
+      "avg_sources_evaluated": 2.0
+    },
+    "abstention": {
+      "abstention_rate": 0.0,
+      "should_abstain_rate": 0.0,
+      "appropriate_rate": 1.0,
+      "correct_abstentions": 0,
+      "correct_answers": 6,
+      "false_abstentions": 0,
+      "false_confidence": 0
+    },
+    "answer_quality": {
+      "word_overlap_mean": 0.556
+    },
     "latency": {
       "retrieval_ms": {
-        "mean": 5395.42,
-        "median": 5482.45,
-        "std": 468.13,
-        "p95": 5876.44,
-        "p99": 5893.01
+        "mean": 5436.76,
+        "median": 5469.37,
+        "std": 325.4,
+        "p95": 5845.67,
+        "p99": 5870.26
       },
       "generation_ms": {
-        "mean": 5550.49,
-        "median": 5646.02,
-        "std": 1262.43,
-        "p95": 6993.41,
-        "p99": 7094.71
+        "mean": 6218.3,
+        "median": 5064.7,
+        "std": 3074.42,
+        "p95": 11193.09,
+        "p99": 12607.19
       },
       "total_ms": {
-        "mean": 10945.92,
-        "median": 11197.5,
-        "std": 1578.08,
-        "p95": 12669.51,
-        "p99": 12837.2
+        "mean": 11655.07,
+        "median": 10534.08,
+        "std": 2843.9,
+        "p95": 16210.05,
+        "p99": 17616.92
       }
     }
   },
-  "individual_results": []
+  "individual_results": [
+    {
+      "query_id": "1",
+      "query": "When was NUST established and what is its primary focus?",
+      "answer_length": 718,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
+        "citation_coverage": 0.3,
+        "expected_sources_found": 1,
+        "expected_sources_total": 1,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 0.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 4,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 1.0,
+        "reasoning": "Every claim in the answer is directly supported by the provided sources, including the establishment date and the primary focus of NUST.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 10  \nReasoning: Every claim in the answer is directly supported by the provided sources, including the establishment date and the primary focus of NUST.  \nUnsupported: None"
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.605,
+        "key_terms_coverage": 0.64
+      },
+      "latency": {
+        "query_id": "1",
+        "retrieval_ms": 5876.41,
+        "generation_ms": 4008.72,
+        "total_ms": 9885.13
+      }
+    },
+    {
+      "query_id": "2",
+      "query": "What are the vision and mission statements of NUST?",
+      "answer_length": 1018,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 5,
+        "unique_citations": 5,
+        "citation_coverage": 0.417,
+        "expected_sources_found": 3,
+        "expected_sources_total": 3,
+        "expected_sources_recall": 1.0,
+        "page_accuracy": 1.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.8,
+        "reasoning": "The vision statement is directly supported by the sources, but the mission statement lacks direct evidence from the provided sources.",
+        "unsupported_claims": "Mission statement claims about stimulating intellectual curiosity, behavioral progression, environmental stewardship, and nurturing future leaders.",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 8  \nReasoning: The vision statement is directly supported by the sources, but the mission statement lacks direct evidence from the provided sources.  \nUnsupported: Mission statement claims about stimulating intellectual curiosity, behavioral progression, environmental stewardship, and nurturing future leaders."
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.596,
+        "key_terms_coverage": 0.575
+      },
+      "latency": {
+        "query_id": "2",
+        "retrieval_ms": 5442.47,
+        "generation_ms": 5072.49,
+        "total_ms": 10514.97
+      }
+    },
+    {
+      "query_id": "3",
+      "query": "What are NUST's key rankings and achievements?",
+      "answer_length": 1306,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 6,
+        "unique_citations": 6,
+        "citation_coverage": 0.462,
+        "expected_sources_found": 2,
+        "expected_sources_total": 3,
+        "expected_sources_recall": 0.667,
+        "page_accuracy": 1.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.6,
+        "reasoning": "The answer includes some accurate rankings and achievements of NUST, but the specific rankings mentioned (371st and 67th) are not supported by the provided sources, which only reference a ranking of 334th.",
+        "unsupported_claims": "Claims of NUST being ranked 371st globally and 67th in Asia.",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 6  \nReasoning: The answer includes some accurate rankings and achievements of NUST, but the specific rankings mentioned (371st and 67th) are not supported by the provided sources, which only reference a ranking of 334th.  \nUnsupported: Claims of NUST being ranked 371st globally and 67th in Asia."
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.487,
+        "key_terms_coverage": 0.35
+      },
+      "latency": {
+        "query_id": "3",
+        "retrieval_ms": 5007.92,
+        "generation_ms": 12960.71,
+        "total_ms": 17968.64
+      }
+    },
+    {
+      "query_id": "4",
+      "query": "What facilities does the NUST Central Library offer?",
+      "answer_length": 973,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 3,
+        "unique_citations": 3,
+        "citation_coverage": 0.2,
+        "expected_sources_found": 1,
+        "expected_sources_total": 2,
+        "expected_sources_recall": 0.5,
+        "page_accuracy": 0.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 4,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 1.0,
+        "reasoning": "Every claim made in the answer is directly supported or clearly implied by the provided sources.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported or clearly implied by the provided sources.  \nUnsupported: None"
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.552,
+        "key_terms_coverage": 0.412
+      },
+      "latency": {
+        "query_id": "4",
+        "retrieval_ms": 5753.44,
+        "generation_ms": 4320.75,
+        "total_ms": 10074.2
+      }
+    },
+    {
+      "query_id": "5",
+      "query": "What are the hostel accommodation options and charges at NUST?",
+      "answer_length": 1492,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 5,
+        "unique_citations": 5,
+        "citation_coverage": 0.5,
+        "expected_sources_found": 2,
+        "expected_sources_total": 4,
+        "expected_sources_recall": 0.5,
+        "page_accuracy": 0.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 7,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 0.8,
+        "reasoning": "Most claims about the hostel options and charges are well-supported by the sources, but some specific details about the hostels and charges lack direct evidence.",
+        "unsupported_claims": "Specific names of hostels and the exact charges for national and international students are not directly confirmed in the provided sources.",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 8  \nReasoning: Most claims about the hostel options and charges are well-supported by the sources, but some specific details about the hostels and charges lack direct evidence.  \nUnsupported: Specific names of hostels and the exact charges for national and international students are not directly confirmed in the provided sources."
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.25,
+        "key_terms_coverage": 0.227
+      },
+      "latency": {
+        "query_id": "5",
+        "retrieval_ms": 5044.02,
+        "generation_ms": 5890.24,
+        "total_ms": 10934.27
+      }
+    },
+    {
+      "query_id": "6",
+      "query": "What is the duration and coursework requirement for PhD studies at NUST?",
+      "answer_length": 900,
+      "num_sources": 10,
+      "citation": {
+        "citation_count": 5,
+        "unique_citations": 5,
+        "citation_coverage": 0.385,
+        "expected_sources_found": 2,
+        "expected_sources_total": 3,
+        "expected_sources_recall": 0.667,
+        "page_accuracy": 0.0,
+        "format_quality": 1.0,
+        "citations_valid": true,
+        "detailed_citations": 5,
+        "simple_citations": 0
+      },
+      "faithfulness": {
+        "faithfulness_score": 1.0,
+        "reasoning": "Every claim made in the answer is directly supported by the information provided in the sources, including the duration of PhD studies and the coursework requirements.",
+        "unsupported_claims": "None",
+        "num_sources_evaluated": 2,
+        "evaluation_method": "llm",
+        "llm_response": "Score: 10  \nReasoning: Every claim made in the answer is directly supported by the information provided in the sources, including the duration of PhD studies and the coursework requirements.  \nUnsupported: None"
+      },
+      "abstention": {
+        "system_abstained": false,
+        "should_abstain": false,
+        "appropriate": true,
+        "result": "correct_answer",
+        "no_sources": false,
+        "weak_sources": false,
+        "num_sources": 10
+      },
+      "answer_quality": {
+        "word_overlap_with_expected": 0.844,
+        "key_terms_coverage": 0.727
+      },
+      "latency": {
+        "query_id": "6",
+        "retrieval_ms": 5496.27,
+        "generation_ms": 5056.9,
+        "total_ms": 10553.18
+      }
+    }
+  ]
 }
