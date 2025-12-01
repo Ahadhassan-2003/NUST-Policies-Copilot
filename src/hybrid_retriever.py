@@ -102,9 +102,9 @@ def hybrid_search(
     openai_vs: Chroma, 
     bge_vs: Chroma, 
     k: int = 10,
-    bm25_weight: float = 0.35,
-    openai_weight: float = 0.55,
-    bge_weight: float = 0.1
+    bm25_weight: float = 0.3,
+    openai_weight: float = 0.35,
+    bge_weight: float = 0.35
 ) -> List[Dict]:
     """
     Perform hybrid search combining BM25, OpenAI embeddings, and BGE embeddings.

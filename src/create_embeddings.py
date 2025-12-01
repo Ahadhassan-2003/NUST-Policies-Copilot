@@ -18,7 +18,7 @@ load_dotenv()
 os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot"
 
 # ========= INPUT / OUTPUT PATHS ========= #
-PDF_JSONL = Path("./data/processed/pdf_chunks_pymu.jsonl")
+PDF_JSONL = Path("./data/processed/pdf_chunks.jsonl")
 HTML_JSONL = Path("./data/processed/html_chunks.jsonl")
 
 INDEX_A_DIR = "./data/vectorstores/chroma_index_openAI"
@@ -271,118 +271,118 @@ def build_bm25_index(chunks):
         return False
 
 # ========= BUILD INDEX A (OpenAI Embeddings) ========= #
-@traceable(name="build_index_openai")
-def build_index_openai(chunks):
-    print("="*60)
-    print("Creating Chroma Index A (OpenAI Embeddings)...")
-    print("="*60)
+# @traceable(name="build_index_openai")
+# def build_index_openai(chunks):
+#     print("="*60)
+#     print("Creating Chroma Index A (OpenAI Embeddings)...")
+#     print("="*60)
     
-    try:
-        embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+#     try:
+#         embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
         
-        texts = [c["text"] for c in chunks]
-        metadatas = [c["metadata"] for c in chunks]
+#         texts = [c["text"] for c in chunks]
+#         metadatas = [c["metadata"] for c in chunks]
         
-        # Create the index in batches to avoid timeout issues
-        batch_size = 100
-        print(f"Processing {len(texts)} chunks in batches of {batch_size}...")
+#         # Create the index in batches to avoid timeout issues
+#         batch_size = 100
+#         print(f"Processing {len(texts)} chunks in batches of {batch_size}...")
         
-        # Create initial vectorstore with first batch
-        vectorstore = Chroma.from_texts(
-            texts=texts[:batch_size],
-            embedding=embeddings,
-            metadatas=metadatas[:batch_size],
-            persist_directory=INDEX_A_DIR
-        )
+#         # Create initial vectorstore with first batch
+#         vectorstore = Chroma.from_texts(
+#             texts=texts[:batch_size],
+#             embedding=embeddings,
+#             metadatas=metadatas[:batch_size],
+#             persist_directory=INDEX_A_DIR
+#         )
         
-        # Add remaining batches
-        for i in range(batch_size, len(texts), batch_size):
-            batch_texts = texts[i:i+batch_size]
-            batch_metadatas = metadatas[i:i+batch_size]
+#         # Add remaining batches
+#         for i in range(batch_size, len(texts), batch_size):
+#             batch_texts = texts[i:i+batch_size]
+#             batch_metadatas = metadatas[i:i+batch_size]
             
-            vectorstore.add_texts(
-                texts=batch_texts,
-                metadatas=batch_metadatas
-            )
+#             vectorstore.add_texts(
+#                 texts=batch_texts,
+#                 metadatas=batch_metadatas
+#             )
             
-            print(f"  Processed {min(i+batch_size, len(texts))}/{len(texts)} chunks")
+#             print(f"  Processed {min(i+batch_size, len(texts))}/{len(texts)} chunks")
         
-        print(f"\n✓ Index A saved at: {INDEX_A_DIR}")
-        print(f"  Total documents: {len(texts)}")
+#         print(f"\n✓ Index A saved at: {INDEX_A_DIR}")
+#         print(f"  Total documents: {len(texts)}")
         
-        # Verify metadata preservation
-        print(f"\n  Verifying metadata preservation in Chroma...")
-        test_results = vectorstore.similarity_search("test", k=1)
-        if test_results:
-            sample_meta = test_results[0].metadata
-            print(f"    Sample doc_id: {sample_meta.get('doc_id', 'N/A')}")
-            print(f"    Sample page: {sample_meta.get('page', 'N/A')}")
-            print(f"    Sample section: {sample_meta.get('section', 'N/A')[:50] if sample_meta.get('section') else 'N/A'}")
+#         # Verify metadata preservation
+#         print(f"\n  Verifying metadata preservation in Chroma...")
+#         test_results = vectorstore.similarity_search("test", k=1)
+#         if test_results:
+#             sample_meta = test_results[0].metadata
+#             print(f"    Sample doc_id: {sample_meta.get('doc_id', 'N/A')}")
+#             print(f"    Sample page: {sample_meta.get('page', 'N/A')}")
+#             print(f"    Sample section: {sample_meta.get('section', 'N/A')[:50] if sample_meta.get('section') else 'N/A'}")
         
-        return True
+#         return True
         
-    except Exception as e:
-        print(f"\n✗ Error creating Index A: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+#     except Exception as e:
+#         print(f"\n✗ Error creating Index A: {e}")
+#         import traceback
+#         traceback.print_exc()
+#         return False
 
-# ========= BUILD INDEX B (BAAI/BGE-M3) ========= #
-@traceable(name="build_index_bge")
-def build_index_bge(chunks):
-    print("="*60)
-    print("Creating Chroma Index B (BAAI/bge-m3 Embeddings)...")
-    print("="*60)
+# # ========= BUILD INDEX B (BAAI/BGE-M3) ========= #
+# @traceable(name="build_index_bge")
+# def build_index_bge(chunks):
+#     print("="*60)
+#     print("Creating Chroma Index B (BAAI/bge-m3 Embeddings)...")
+#     print("="*60)
     
-    try:
-        embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
+#     try:
+#         embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")
         
-        texts = [c["text"] for c in chunks]
-        metadatas = [c["metadata"] for c in chunks]
+#         texts = [c["text"] for c in chunks]
+#         metadatas = [c["metadata"] for c in chunks]
         
-        # Create the index in batches
-        batch_size = 100
-        print(f"Processing {len(texts)} chunks in batches of {batch_size}...")
+#         # Create the index in batches
+#         batch_size = 100
+#         print(f"Processing {len(texts)} chunks in batches of {batch_size}...")
         
-        # Create initial vectorstore with first batch
-        vectorstore = Chroma.from_texts(
-            texts=texts[:batch_size],
-            embedding=embeddings,
-            metadatas=metadatas[:batch_size],
-            persist_directory=INDEX_B_DIR
-        )
+#         # Create initial vectorstore with first batch
+#         vectorstore = Chroma.from_texts(
+#             texts=texts[:batch_size],
+#             embedding=embeddings,
+#             metadatas=metadatas[:batch_size],
+#             persist_directory=INDEX_B_DIR
+#         )
         
-        # Add remaining batches
-        for i in range(batch_size, len(texts), batch_size):
-            batch_texts = texts[i:i+batch_size]
-            batch_metadatas = metadatas[i:i+batch_size]
+#         # Add remaining batches
+#         for i in range(batch_size, len(texts), batch_size):
+#             batch_texts = texts[i:i+batch_size]
+#             batch_metadatas = metadatas[i:i+batch_size]
             
-            vectorstore.add_texts(
-                texts=batch_texts,
-                metadatas=batch_metadatas
-            )
+#             vectorstore.add_texts(
+#                 texts=batch_texts,
+#                 metadatas=batch_metadatas
+#             )
             
-            print(f"  Processed {min(i+batch_size, len(texts))}/{len(texts)} chunks")
+#             print(f"  Processed {min(i+batch_size, len(texts))}/{len(texts)} chunks")
         
-        print(f"\n✓ Index B saved at: {INDEX_B_DIR}")
-        print(f"  Total documents: {len(texts)}")
+#         print(f"\n✓ Index B saved at: {INDEX_B_DIR}")
+#         print(f"  Total documents: {len(texts)}")
         
-        # Verify metadata preservation
-        print(f"\n  Verifying metadata preservation in BGE...")
-        test_results = vectorstore.similarity_search("test", k=1)
-        if test_results:
-            sample_meta = test_results[0].metadata
-            print(f"    Sample doc_id: {sample_meta.get('doc_id', 'N/A')}")
-            print(f"    Sample page: {sample_meta.get('page', 'N/A')}")
-            print(f"    Sample section: {sample_meta.get('section', 'N/A')[:50] if sample_meta.get('section') else 'N/A'}")
+#         # Verify metadata preservation
+#         print(f"\n  Verifying metadata preservation in BGE...")
+#         test_results = vectorstore.similarity_search("test", k=1)
+#         if test_results:
+#             sample_meta = test_results[0].metadata
+#             print(f"    Sample doc_id: {sample_meta.get('doc_id', 'N/A')}")
+#             print(f"    Sample page: {sample_meta.get('page', 'N/A')}")
+#             print(f"    Sample section: {sample_meta.get('section', 'N/A')[:50] if sample_meta.get('section') else 'N/A'}")
         
-        return True
+#         return True
         
-    except Exception as e:
-        print(f"\n✗ Error creating Index B: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+#     except Exception as e:
+#         print(f"\n✗ Error creating Index B: {e}")
+#         import traceback
+#         traceback.print_exc()
+#         return False
 
 # ========= MAIN RUNNER ========= #
 @traceable(name="create_all_indices")
@@ -397,30 +397,30 @@ def main():
     
     # Build all indexes
     success_bm25 = build_bm25_index(chunks)
-    success_a = build_index_openai(chunks)
-    success_b = build_index_bge(chunks)
+    # success_a = build_index_openai(chunks)
+    # success_b = build_index_bge(chunks)
     
     # Summary
     print("\n" + "="*60)
     print("SUMMARY")
     print("="*60)
     print(f"BM25 Index:       {'✓ Success' if success_bm25 else '✗ Failed'}")
-    print(f"Index A (OpenAI): {'✓ Success' if success_a else '✗ Failed'}")
-    print(f"Index B (BGE-M3): {'✓ Success' if success_b else '✗ Failed'}")
+    # print(f"Index A (OpenAI): {'✓ Success' if success_a else '✗ Failed'}")
+    # print(f"Index B (BGE-M3): {'✓ Success' if success_b else '✗ Failed'}")
     
-    if success_bm25 and success_a and success_b:
-        print("\n✓ All indices created successfully!")
-        print("\nMetadata fields preserved:")
-        print("  • doc_id (document identifier)")
-        print("  • page (page number)")
-        print("  • section (section name/heading)")
-        print("  • url/URL (web address)")
-        print("  • year (academic year or publication year)")
-        print("  • source_type (pdf/html)")
-        print("\nIndices are ready for retrieval with full citation metadata!")
-    else:
-        print("\n⚠ Some indexes failed to create. Check errors above.")
-        exit(1)
+    # if success_bm25 and success_a and success_b:
+    #     print("\n✓ All indices created successfully!")
+    #     print("\nMetadata fields preserved:")
+    #     print("  • doc_id (document identifier)")
+    #     print("  • page (page number)")
+    #     print("  • section (section name/heading)")
+    #     print("  • url/URL (web address)")
+    #     print("  • year (academic year or publication year)")
+    #     print("  • source_type (pdf/html)")
+    #     print("\nIndices are ready for retrieval with full citation metadata!")
+    # else:
+    #     print("\n⚠ Some indexes failed to create. Check errors above.")
+    #     exit(1)
 
 if __name__ == "__main__":
     main()

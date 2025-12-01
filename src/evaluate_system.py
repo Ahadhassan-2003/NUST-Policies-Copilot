@@ -11,6 +11,7 @@ from tqdm import tqdm
 import numpy as np
 
 from dotenv import load_dotenv
+from langsmith import traceable
 
 # Import from other modules
 from hybrid_retriever import initialize_retriever, hybrid_search, load_chunks
@@ -24,13 +25,17 @@ from evaluation_metrics import (
 
 load_dotenv()
 
+# Initialize LangSmith
+os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot - Evaluation"
+
 # ========= PATHS ========= #
-GOLD_SET_PATH = Path("./eval/dev_set.jsonl")
+GOLD_SET_PATH = Path("./eval/final_set.jsonl")
 RESULTS_PATH = Path("./eval/results")
 
-# ========= HELPER FUNCTIONS ========= #
+# ========= HELPER FUNCTIONS FROM OLD EVALUATOR ========= #
 
 def normalize_doc_id(doc_id: Any) -> str:
+    """Normalize document ID for comparison."""
     if doc_id is None:
         return ""
     doc_id = str(doc_id).lower().strip()
@@ -43,6 +48,7 @@ def normalize_doc_id(doc_id: Any) -> str:
     return doc_id
 
 def extract_doc_id_variants(doc_id: str) -> list:
+    """Extract multiple variants of a document ID for flexible matching."""
     normalized = normalize_doc_id(doc_id)
     variants = [normalized]
     parts = normalized.replace('_', '-').split('-')
@@ -65,7 +71,9 @@ def extract_doc_id_variants(doc_id: str) -> list:
             unique_variants.append(v)
     return unique_variants
 
+@traceable(name="is_relevant")
 def is_relevant(retrieved: Dict, gold: Dict) -> bool:
+    """Check if a retrieved result is relevant (for retrieval metrics)."""
     ret_doc = retrieved["metadata"].get("doc_id", "")
     ret_source = retrieved["metadata"].get("source", "")
     ret_sec = retrieved["metadata"].get("section", "")
@@ -121,16 +129,10 @@ def is_relevant(retrieved: Dict, gold: Dict) -> bool:
     
     return False
 
-def compute_total_relevant(gold: Dict, all_chunks: List[Dict]) -> int:
-    count = 0
-    for c in all_chunks:
-        if is_relevant({"text": c["text"], "metadata": c["metadata"]}, gold):
-            count += 1
-    return count
-
 # ========= GOLD SET LOADING ========= #
 
 def load_gold_set(gold_path: Path) -> List[Dict]:
+    """Load enhanced gold set with all new fields."""
     with gold_path.open('r', encoding='utf-8') as f:
         content = f.read()
     
@@ -153,6 +155,8 @@ def load_gold_set(gold_path: Path) -> List[Dict]:
         except json.JSONDecodeError:
             pass
     
+    # Multi-line JSON fallback
+    print("Attempting to parse multi-line JSON format...")
     current_obj = ""
     brace_count = 0
     
@@ -172,8 +176,9 @@ def load_gold_set(gold_path: Path) -> List[Dict]:
     
     return golds
 
-# ========= RETRIEVAL EVALUATION ========= #
+# ========= RETRIEVAL EVALUATION (FIXED WITH HIT RATE) ========= #
 
+@traceable(name="evaluate_retrieval_metrics")
 def evaluate_retrieval_metrics(
     golds: List[Dict],
     chunks: List[Dict],
@@ -182,9 +187,19 @@ def evaluate_retrieval_metrics(
     bge_vs,
     k: int = 10
 ) -> Dict[str, Any]:
-
+    """
+    Evaluate retrieval performance using Hit Rate@k and nDCG@k.
+    
+    Hit Rate@k (also called Recall@k in RAG contexts):
+    - Binary metric: 1 if at least one relevant doc in top k, 0 otherwise
+    - More realistic for RAG than traditional recall (relevant_in_k / total_relevant_in_corpus)
+    
+    nDCG@k:
+    - Measures ranking quality
+    - Higher scores = relevant docs ranked higher
+    """
     metrics = {
-        "recall": {1: [], 3: [], 5: [], 10: []},
+        "hit_rate": {1: [], 3: [], 5: [], 10: []},  # Changed from "recall"
         "ndcg": {3: [], 5: [], 10: []}
     }
     
@@ -195,28 +210,44 @@ def evaluate_retrieval_metrics(
         
         retrieved = hybrid_search(query, bm25_retriever, openai_vs, bge_vs, k=k)
         
-        total_rel = compute_total_relevant(gold, chunks)
-        if total_rel == 0:
-            continue
-        
+        # Get relevance scores for each retrieved doc
         rel_scores = [1 if is_relevant(r, gold) else 0 for r in retrieved]
         
+        # Hit Rate@k: Did we find at least one relevant doc in top k?
         for kk in [1, 3, 5, 10]:
-            rel_in_k = sum(rel_scores[:kk])
-            metrics["recall"][kk].append(rel_in_k / total_rel)
+            has_relevant = any(rel_scores[:kk])
+            metrics["hit_rate"][kk].append(1.0 if has_relevant else 0.0)
         
-        for kk in [3, 5, 10]:
-            dcg = sum(rs / math.log2(i+2) for i, rs in enumerate(rel_scores[:kk]))
-            idcg = sum(1 / math.log2(i+2) for i in range(min(kk, total_rel)))
-            metrics["ndcg"][kk].append(dcg / idcg if idcg > 0 else 0.0)
+        # nDCG@k: How well are relevant docs ranked?
+        # Only compute if we have at least one relevant doc
+        if any(rel_scores):
+            for kk in [3, 5, 10]:
+                # DCG: sum of (relevance / log2(rank+1))
+                dcg = sum(rs / math.log2(i+2) for i, rs in enumerate(rel_scores[:kk]))
+                
+                # IDCG: perfect ranking (all relevant docs first)
+                num_relevant_in_k = sum(rel_scores[:kk])
+                idcg = sum(1 / math.log2(i+2) for i in range(num_relevant_in_k))
+                
+                ndcg = dcg / idcg if idcg > 0 else 0.0
+                metrics["ndcg"][kk].append(ndcg)
+        else:
+            # No relevant docs found at all
+            for kk in [3, 5, 10]:
+                metrics["ndcg"][kk].append(0.0)
     
-    avg_recall = {k: np.mean(v) if v else 0.0 for k, v in metrics["recall"].items()}
+    # Compute averages
+    avg_hit_rate = {k: np.mean(v) if v else 0.0 for k, v in metrics["hit_rate"].items()}
     avg_ndcg = {k: np.mean(v) if v else 0.0 for k, v in metrics["ndcg"].items()}
     
-    return {"recall": avg_recall, "ndcg": avg_ndcg}
+    return {
+        "hit_rate": avg_hit_rate,  # Changed from "recall"
+        "ndcg": avg_ndcg
+    }
 
-# ========= GENERATION EVALUATION ========= #
+# ========= GENERATION EVALUATION (NEW METRICS) ========= #
 
+@traceable(name="evaluate_generation_metrics")
 def evaluate_generation_metrics(
     golds: List[Dict],
     bm25_retriever,
@@ -224,11 +255,29 @@ def evaluate_generation_metrics(
     bge_vs,
     strict_mode: bool = False,
     k: int = 10,
-    use_llm_faithfulness: bool = False
+    faithfulness_top_k: int = 2
 ) -> Dict[str, Any]:
-
+    """
+    Evaluate generation quality with new metrics:
+    - Citation Precision
+    - Faithfulness/AIS (LLM-based, top K sources only)
+    - Abstention Appropriateness
+    - Latency
+    
+    Args:
+        golds: Gold standard queries
+        bm25_retriever: BM25 retriever
+        openai_vs: OpenAI vector store
+        bge_vs: BGE vector store
+        strict_mode: Enable strict mode for generation
+        k: Number of documents to retrieve
+        faithfulness_top_k: Number of top sources to use for faithfulness eval (default: 2)
+    """
+    
     all_results = []
     latency_results = []
+    
+    print(f"\nEvaluating with faithfulness check on top {faithfulness_top_k} sources...")
     
     for gold in tqdm(golds, desc="Evaluating Generation"):
         query = gold.get("query")
@@ -236,12 +285,15 @@ def evaluate_generation_metrics(
             continue
         
         try:
+            # Track latency
             t_start = time.time()
             
+            # Retrieval
             t0 = time.time()
             retrieved_docs = hybrid_search(query, bm25_retriever, openai_vs, bge_vs, k=k)
             retrieval_time = (time.time() - t0) * 1000
             
+            # Generation
             t1 = time.time()
             result = generate_answer_with_retrieval(
                 query=query,
@@ -253,6 +305,7 @@ def evaluate_generation_metrics(
             
             total_time = (time.time() - t_start) * 1000
             
+            # Store latency
             latency_results.append({
                 'query_id': gold.get('id'),
                 'retrieval_ms': round(retrieval_time, 2),
@@ -260,6 +313,7 @@ def evaluate_generation_metrics(
                 'total_ms': round(total_time, 2)
             })
             
+            # Evaluate answer quality
             answer = result['answer']
             sources = result['sources']
             
@@ -268,19 +322,24 @@ def evaluate_generation_metrics(
                 answer=answer,
                 sources=sources,
                 gold=gold,
-                use_llm_faithfulness=use_llm_faithfulness
+                faithfulness_top_k=faithfulness_top_k
             )
             
+            # Add latency info
             eval_result['latency'] = latency_results[-1]
             
             all_results.append(eval_result)
             
         except Exception as e:
             print(f"\nError evaluating query {gold.get('id')}: {e}")
+            import traceback
+            traceback.print_exc()
             continue
     
+    # Aggregate metrics
     aggregated = aggregate_metrics(all_results)
     
+    # Add latency statistics
     if latency_results:
         retrieval_times = [r['retrieval_ms'] for r in latency_results]
         generation_times = [r['generation_ms'] for r in latency_results]
@@ -317,6 +376,7 @@ def evaluate_generation_metrics(
 
 # ========= FULL EVALUATION ========= #
 
+@traceable(name="evaluate_full_system")
 def evaluate_full_system(
     gold_path: Path,
     chunks: List[Dict],
@@ -325,25 +385,42 @@ def evaluate_full_system(
     bge_vs,
     config: Dict[str, Any]
 ) -> Dict[str, Any]:
-
+    """
+    Run complete evaluation: retrieval + generation metrics.
+    
+    Args:
+        gold_path: Path to enhanced gold set
+        chunks: All document chunks
+        bm25_retriever: BM25 retriever
+        openai_vs: OpenAI vector store
+        bge_vs: BGE vector store
+        config: Evaluation configuration
+    
+    Returns:
+        Dict with all evaluation results
+    """
+    
     if not gold_path.exists():
         raise FileNotFoundError(f"Gold set not found at {gold_path}")
     
+    # Load gold set
     golds = load_gold_set(gold_path)
     print(f"\nLoaded {len(golds)} queries from gold set")
     
     if not golds:
         raise ValueError("No valid queries found in gold set!")
     
+    # Configuration
     k = config.get('k', 10)
     strict_mode = config.get('strict_mode', False)
-    use_llm_faithfulness = config.get('use_llm_faithfulness', False)
+    faithfulness_top_k = config.get('faithfulness_top_k', 2)
     
     print(f"\nEvaluation Config:")
     print(f"  k (retrieval): {k}")
     print(f"  strict_mode: {strict_mode}")
-    print(f"  LLM faithfulness: {use_llm_faithfulness}")
+    print(f"  faithfulness_top_k: {faithfulness_top_k}")
     
+    # 1. Evaluate Retrieval
     print("\n" + "="*70)
     print("PHASE 1: RETRIEVAL EVALUATION")
     print("="*70)
@@ -352,15 +429,16 @@ def evaluate_full_system(
         golds, chunks, bm25_retriever, openai_vs, bge_vs, k=k
     )
     
-    print("\nRetrieval Metrics:")
-    print(f"  Recall@1:  {retrieval_metrics['recall'][1]:.4f}")
-    print(f"  Recall@3:  {retrieval_metrics['recall'][3]:.4f}")
-    print(f"  Recall@5:  {retrieval_metrics['recall'][5]:.4f}")
-    print(f"  Recall@10: {retrieval_metrics['recall'][10]:.4f}")
-    print(f"  nDCG@3:    {retrieval_metrics['ndcg'][3]:.4f}")
-    print(f"  nDCG@5:    {retrieval_metrics['ndcg'][5]:.4f}")
-    print(f"  nDCG@10:   {retrieval_metrics['ndcg'][10]:.4f}")
+    print("\nRetrieval Metrics (Hit Rate = % queries with ≥1 relevant doc in top k):")
+    print(f"  Hit Rate@1:  {retrieval_metrics['hit_rate'][1]:.4f}")
+    print(f"  Hit Rate@3:  {retrieval_metrics['hit_rate'][3]:.4f}")
+    print(f"  Hit Rate@5:  {retrieval_metrics['hit_rate'][5]:.4f}")
+    print(f"  Hit Rate@10: {retrieval_metrics['hit_rate'][10]:.4f}")
+    print(f"  nDCG@3:      {retrieval_metrics['ndcg'][3]:.4f}")
+    print(f"  nDCG@5:      {retrieval_metrics['ndcg'][5]:.4f}")
+    print(f"  nDCG@10:     {retrieval_metrics['ndcg'][10]:.4f}")
     
+    # 2. Evaluate Generation
     print("\n" + "="*70)
     print("PHASE 2: GENERATION EVALUATION")
     print("="*70)
@@ -369,11 +447,15 @@ def evaluate_full_system(
         golds, bm25_retriever, openai_vs, bge_vs,
         strict_mode=strict_mode,
         k=k,
-        use_llm_faithfulness=use_llm_faithfulness
+        faithfulness_top_k=faithfulness_top_k
     )
     
-    print_evaluation_summary(generation_results['aggregated'])
+    # Print summary - FIXED: Pass total_queries
+    aggregated_with_total = generation_results['aggregated'].copy()
+    aggregated_with_total['total_queries'] = len(golds)
+    print_evaluation_summary(aggregated_with_total)
     
+    # Print latency summary
     if 'latency' in generation_results['aggregated']:
         print("\n--- Latency Statistics ---")
         lat = generation_results['aggregated']['latency']
@@ -383,6 +465,7 @@ def evaluate_full_system(
         print(f"  P95: {lat['total_ms']['p95']:.2f}ms")
         print(f"  P99: {lat['total_ms']['p99']:.2f}ms")
     
+    # Combine results
     full_results = {
         'config': config,
         'total_queries': len(golds),
@@ -398,10 +481,13 @@ def evaluate_full_system(
 if __name__ == "__main__":
     print("Starting comprehensive system evaluation...")
     
+    # Check for gold set
     if not GOLD_SET_PATH.exists():
         print(f"Error: Enhanced gold set not found at {GOLD_SET_PATH}")
+        print("Please create the enhanced gold set first with expected_answer, expected_citations, etc.")
         exit(1)
     
+    # Load chunks and retriever
     print("\nLoading chunks and retriever...")
     chunks = load_chunks()
     if not chunks:
@@ -410,18 +496,27 @@ if __name__ == "__main__":
     
     bm25_retriever, openai_vs, bge_vs = initialize_retriever()
     
+    # Configuration
     config = {
         'k': 10,
         'strict_mode': False,
-        'use_llm_faithfulness': False
+        'faithfulness_top_k': 2  # Only use top 2 sources for faithfulness eval
     }
     
+    # Parse command line arguments
     if len(sys.argv) > 1:
         if sys.argv[1] == 'strict':
             config['strict_mode'] = True
-        elif sys.argv[1] == 'llm':
-            config['use_llm_faithfulness'] = True
+            print("Running in STRICT MODE")
+        elif sys.argv[1].startswith('top'):
+            # Allow: python evaluate_system.py top3
+            try:
+                config['faithfulness_top_k'] = int(sys.argv[1][3:])
+                print(f"Using top {config['faithfulness_top_k']} sources for faithfulness")
+            except:
+                pass
     
+    # Run evaluation
     results = evaluate_full_system(
         GOLD_SET_PATH,
         chunks,
@@ -431,12 +526,16 @@ if __name__ == "__main__":
         config
     )
     
+    # Save results
     RESULTS_PATH.mkdir(parents=True, exist_ok=True)
     
+    # Save full results
     results_file = RESULTS_PATH / "full_evaluation_results.json"
     with results_file.open("w") as f:
         json.dump(results, f, indent=2)
+    print(f"\n✓ Full results saved to {results_file}")
     
+    # Save summary only
     summary_file = RESULTS_PATH / "evaluation_summary.json"
     summary = {
         'config': results['config'],
@@ -446,8 +545,8 @@ if __name__ == "__main__":
     }
     with summary_file.open("w") as f:
         json.dump(summary, f, indent=2)
+    print(f"✓ Summary saved to {summary_file}")
     
     print("\n" + "="*70)
     print("EVALUATION COMPLETE!")
     print("="*70)
-

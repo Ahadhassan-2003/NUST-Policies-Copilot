@@ -9,9 +9,7 @@ import numpy as np
 from pathlib import Path
 
 from langsmith import traceable
-from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
-
 
 # ========= CITATION EXTRACTION ========= #
 
@@ -198,66 +196,125 @@ def evaluate_citation_precision(
 
 # ========= FAITHFULNESS / AIS ========= #
 
-@traceable(name="evaluate_faithfulness_simple")
-def evaluate_faithfulness_simple(answer: str, sources: List[Dict[str, Any]]) -> Dict[str, Any]:
+@traceable(name="evaluate_faithfulness_llm")
+def evaluate_faithfulness_llm(
+    answer: str, 
+    sources: List[Dict[str, Any]], 
+    query: str,
+    model: str = "gpt-4o-mini",
+    top_k: int = 2
+) -> Dict[str, Any]:
     """
-    Simple faithfulness check using ngram overlap.
+    Faithfulness check using LLM as judge.
+    Only considers top K retrieved sources to avoid penalizing for loosely related chunks.
     
-    Measures what percentage of answer content appears in sources.
+    Args:
+        answer: Generated answer to evaluate
+        sources: Retrieved source documents
+        query: Original query
+        top_k: Number of top sources to consider (default: 2)
+        model: LLM model to use for evaluation
+    
+    Returns:
+        Dict with faithfulness score and details
     """
     
-    # Remove citations and clean answer
-    answer_clean = re.sub(r'\[(?:\d+:?[^\]]*)\]', '', answer)
-    answer_clean = answer_clean.lower().strip()
+    # Only use top K sources for evaluation
+    top_sources = sources[:top_k] if len(sources) >= top_k else sources
     
-    # Extract source texts
-    source_texts = ' '.join([doc['text'].lower() for doc in sources])
+    if not top_sources:
+        return {
+            'faithfulness_score': 0.0,
+            'reasoning': 'No sources available for evaluation',
+            'unsupported_claims': 'N/A',
+            'num_sources_evaluated': 0,
+            'evaluation_method': 'llm'
+        }
     
-    # Compute word overlap
-    answer_words = set(answer_clean.split())
-    source_words = set(source_texts.split())
+    try:
+        from langchain_openai import ChatOpenAI
+        llm = ChatOpenAI(model=model, temperature=0)
+        
+        # Format sources with clear numbering
+        sources_text = ""
+        for i, doc in enumerate(top_sources, 1):
+            text_preview = doc['text'][:800]  # Increased from 500 to get more context
+            sources_text += f"--- Source {i} ---\n{text_preview}\n\n"
+        
+        prompt = f"""You are evaluating if an AI assistant's answer is faithfully grounded in the provided sources.
+
+Query: {query}
+
+Answer to Evaluate:
+{answer}
+
+Available Sources (Top {top_k} most relevant):
+{sources_text}
+
+Task: Evaluate how well the answer is supported by ONLY these {top_k} sources.
+
+Scoring Guide:
+- Score 10/10: Every claim is directly stated or clearly implied by the sources
+- Score 8-9/10: Most claims well-supported, minor details may be reasonably inferred
+- Score 6-7/10: Core facts supported, but some claims lack direct evidence
+- Score 4-5/10: Mix of supported and unsupported claims
+- Score 2-3/10: Few claims supported, mostly unsupported or speculative
+- Score 0-1/10: Answer contradicts sources or is completely fabricated
+
+Important:
+- Only evaluate against these {top_k} sources provided
+- Give credit for claims that are clearly implied, not just explicitly stated
+- Be fair - don't penalize for reasonable paraphrasing or summarization
+- Focus on factual claims, ignore stylistic elements
+
+Respond in this EXACT format (one line each):
+Score: [number 0-10]
+Reasoning: [one clear sentence explaining the score]
+Unsupported: [list specific unsupported claims, or write "None" if all supported]"""
+
+        response = llm.invoke(prompt)
+        response_text = response.content if hasattr(response, 'content') else str(response)
+        
+        # Parse response
+        score_match = re.search(r'Score:\s*(\d+(?:\.\d+)?)', response_text, re.IGNORECASE)
+        score = float(score_match.group(1)) / 10 if score_match else 0.5
+        
+        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text, re.IGNORECASE)
+        reasoning = reasoning_match.group(1).strip() if reasoning_match else "Unable to parse reasoning"
+        
+        unsupported_match = re.search(r'Unsupported:\s*(.+?)(?:\n\n|\Z)', response_text, re.IGNORECASE | re.DOTALL)
+        unsupported = unsupported_match.group(1).strip() if unsupported_match else "Unable to parse"
+        
+        # Clean up unsupported claims
+        if unsupported.lower() in ['none', 'none.', 'n/a', 'na']:
+            unsupported = "None"
+        
+        return {
+            'faithfulness_score': round(score, 3),
+            'reasoning': reasoning,
+            'unsupported_claims': unsupported,
+            'num_sources_evaluated': len(top_sources),
+            'evaluation_method': 'llm',
+            'llm_response': response_text
+        }
     
-    # Filter out common words
-    common_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 
-                   'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
-                   'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should',
-                   'can', 'could', 'may', 'might', 'must', 'this', 'that', 'these', 'those'}
-    
-    answer_words_filtered = answer_words - common_words
-    
-    if not answer_words_filtered:
-        return {'word_overlap': 0.0, 'ngram_overlap_2': 0.0, 'ngram_overlap_3': 0.0}
-    
-    # Word overlap
-    word_overlap = len(answer_words_filtered & source_words) / len(answer_words_filtered)
-    
-    # Bigram overlap
-    def get_ngrams(text, n):
-        words = text.split()
-        return set(' '.join(words[i:i+n]) for i in range(len(words)-n+1))
-    
-    answer_bigrams = get_ngrams(answer_clean, 2)
-    source_bigrams = get_ngrams(source_texts, 2)
-    bigram_overlap = len(answer_bigrams & source_bigrams) / len(answer_bigrams) if answer_bigrams else 0
-    
-    # Trigram overlap
-    answer_trigrams = get_ngrams(answer_clean, 3)
-    source_trigrams = get_ngrams(source_texts, 3)
-    trigram_overlap = len(answer_trigrams & source_trigrams) / len(answer_trigrams) if answer_trigrams else 0
-    
-    return {
-        'word_overlap': round(word_overlap, 3),
-        'ngram_overlap_2': round(bigram_overlap, 3),
-        'ngram_overlap_3': round(trigram_overlap, 3),
-        'faithfulness_score': round((word_overlap + bigram_overlap + trigram_overlap) / 3, 3)
-    }
+    except Exception as e:
+        print(f"Warning: LLM faithfulness evaluation failed: {e}")
+        return {
+            'faithfulness_score': None,
+            'reasoning': f"Error: {str(e)}",
+            'unsupported_claims': "Error during evaluation",
+            'num_sources_evaluated': len(top_sources),
+            'evaluation_method': 'llm',
+            'llm_response': None
+        }
 
 @traceable(name="evaluate_faithfulness_llm")
 def evaluate_faithfulness_llm(
     answer: str, 
     sources: List[Dict[str, Any]], 
     query: str,
-    model: str = "gpt-4o-mini"
+    model: str = "ibm/granite4:latest"
 ) -> Dict[str, Any]:
     """
     Advanced faithfulness check using LLM as judge.
@@ -266,7 +323,7 @@ def evaluate_faithfulness_llm(
     """
     
     try:
-        llm = ChatOpenAI(model=model, temperature=0)
+        llm = ChatOllama(model=model, temperature=0)
         
         # Format sources
         sources_text = "\n\n".join([
@@ -299,13 +356,13 @@ Unsupported claims: [list any claims not found in sources, or "None"]"""
         response_text = response.content if hasattr(response, 'content') else str(response)
         
         # Parse response
-        score_match = re.search(r'Score:\s*(\d+)', response_text) # type: ignore
+        score_match = re.search(r'Score:\s*(\d+)', response_text)
         score = int(score_match.group(1)) / 10 if score_match else 0.5
         
-        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text) # type: ignore
+        reasoning_match = re.search(r'Reasoning:\s*(.+?)(?:\n|$)', response_text)
         reasoning = reasoning_match.group(1).strip() if reasoning_match else ""
         
-        unsupported_match = re.search(r'Unsupported claims:\s*(.+?)(?:\n\n|$)', response_text, re.DOTALL) # type: ignore
+        unsupported_match = re.search(r'Unsupported claims:\s*(.+?)(?:\n\n|$)', response_text, re.DOTALL)
         unsupported = unsupported_match.group(1).strip() if unsupported_match else ""
         
         return {
@@ -460,10 +517,17 @@ def evaluate_single_query(
     answer: str,
     sources: List[Dict[str, Any]],
     gold: Dict[str, Any],
-    use_llm_faithfulness: bool = False
+    faithfulness_top_k: int = 2
 ) -> Dict[str, Any]:
     """
     Run all evaluation metrics on a single query.
+    
+    Args:
+        query: User query
+        answer: Generated answer
+        sources: Retrieved source documents
+        gold: Gold standard data
+        faithfulness_top_k: Number of top sources to consider for faithfulness (default: 2)
     
     Returns:
         Dict with all metrics
@@ -480,13 +544,23 @@ def evaluate_single_query(
     citation_metrics = evaluate_citation_precision(answer, sources, gold)
     results['citation'] = citation_metrics
     
-    # Faithfulness (simple version always, LLM optional)
-    faithfulness_simple = evaluate_faithfulness_simple(answer, sources)
-    results['faithfulness'] = faithfulness_simple
-    
-    if use_llm_faithfulness and sources:
-        faithfulness_llm = evaluate_faithfulness_llm(answer, sources, query)
-        results['faithfulness_llm'] = faithfulness_llm
+    # Faithfulness - LLM-based only, using top K sources
+    if sources:
+        faithfulness_metrics = evaluate_faithfulness_llm(
+            answer, 
+            sources, 
+            query,
+            top_k=faithfulness_top_k
+        )
+        results['faithfulness'] = faithfulness_metrics
+    else:
+        results['faithfulness'] = {
+            'faithfulness_score': 0.0,
+            'reasoning': 'No sources available',
+            'unsupported_claims': 'N/A',
+            'num_sources_evaluated': 0,
+            'evaluation_method': 'llm'
+        }
     
     # Abstention
     abstention_metrics = evaluate_abstention(answer, query, sources, gold)
@@ -517,20 +591,35 @@ def aggregate_metrics(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
     
     # Citation metrics
     citation_keys = ['citation_count', 'citation_coverage', 'expected_sources_recall', 
-                     'format_quality', 'page_accuracy']
+                    'format_quality', 'page_accuracy']
     for key in citation_keys:
         values = [r['citation'][key] for r in all_results if r['citation'].get(key) is not None]
         if values:
             aggregated['citation'][f'{key}_mean'] = round(np.mean(values), 3)
             aggregated['citation'][f'{key}_std'] = round(np.std(values), 3)
     
-    # Faithfulness metrics
-    faith_keys = ['word_overlap', 'ngram_overlap_2', 'ngram_overlap_3', 'faithfulness_score']
-    for key in faith_keys:
-        values = [r['faithfulness'][key] for r in all_results if key in r.get('faithfulness', {})]
-        if values:
-            aggregated['faithfulness'][f'{key}_mean'] = round(np.mean(values), 3)
-            aggregated['faithfulness'][f'{key}_std'] = round(np.std(values), 3)
+    # Faithfulness metrics - LLM-based only
+    faithfulness_values = [
+        r['faithfulness']['faithfulness_score'] 
+        for r in all_results 
+        if r.get('faithfulness', {}).get('faithfulness_score') is not None
+    ]
+    
+    if faithfulness_values:
+        aggregated['faithfulness']['faithfulness_score_mean'] = round(np.mean(faithfulness_values), 3)
+        aggregated['faithfulness']['faithfulness_score_std'] = round(np.std(faithfulness_values), 3)
+        aggregated['faithfulness']['faithfulness_score_min'] = round(min(faithfulness_values), 3)
+        aggregated['faithfulness']['faithfulness_score_max'] = round(max(faithfulness_values), 3)
+        aggregated['faithfulness']['evaluation_method'] = 'llm'
+        
+        # Count how many had top K sources
+        num_sources_evaluated = [
+            r['faithfulness']['num_sources_evaluated'] 
+            for r in all_results 
+            if 'num_sources_evaluated' in r.get('faithfulness', {})
+        ]
+        if num_sources_evaluated:
+            aggregated['faithfulness']['avg_sources_evaluated'] = round(np.mean(num_sources_evaluated), 2)
     
     # Abstention metrics
     abstention_counts = Counter(r['abstention']['result'] for r in all_results)
@@ -549,7 +638,7 @@ def aggregate_metrics(all_results: List[Dict[str, Any]]) -> Dict[str, Any]:
     # Answer quality (if available)
     if any('answer_quality' in r for r in all_results):
         quality_values = [r['answer_quality']['word_overlap_with_expected'] 
-                         for r in all_results if 'answer_quality' in r]
+                        for r in all_results if 'answer_quality' in r]
         if quality_values:
             aggregated['answer_quality']['word_overlap_mean'] = round(np.mean(quality_values), 3)
     
@@ -562,11 +651,13 @@ def print_evaluation_summary(aggregated: Dict[str, Any]):
     print("EVALUATION SUMMARY")
     print("="*70)
     
-    print(f"\nTotal Queries Evaluated: {aggregated['total_queries']}")
+    total_queries = aggregated.get('total_queries', 0)
+    if total_queries > 0:
+        print(f"\nTotal Queries Evaluated: {total_queries}")
     
     # Citation Metrics
     print("\n--- Citation Quality ---")
-    cit = aggregated['citation']
+    cit = aggregated.get('citation', {})
     print(f"  Average Citations per Answer: {cit.get('citation_count_mean', 0):.2f}")
     print(f"  Citation Coverage: {cit.get('citation_coverage_mean', 0):.3f}")
     print(f"  Expected Sources Recall: {cit.get('expected_sources_recall_mean', 0):.3f}")
@@ -575,24 +666,27 @@ def print_evaluation_summary(aggregated: Dict[str, Any]):
         print(f"  Page Accuracy: {cit.get('page_accuracy_mean', 0):.3f}")
     
     # Faithfulness Metrics
-    print("\n--- Faithfulness / Grounding ---")
-    faith = aggregated['faithfulness']
-    print(f"  Word Overlap: {faith.get('word_overlap_mean', 0):.3f}")
-    print(f"  Bigram Overlap: {faith.get('ngram_overlap_2_mean', 0):.3f}")
-    print(f"  Trigram Overlap: {faith.get('ngram_overlap_3_mean', 0):.3f}")
-    print(f"  Overall Faithfulness Score: {faith.get('faithfulness_score_mean', 0):.3f}")
+    print("\n--- Faithfulness / Grounding (LLM-based) ---")
+    faith = aggregated.get('faithfulness', {})
+    if faith:
+        print(f"  Faithfulness Score: {faith.get('faithfulness_score_mean', 0):.3f} (±{faith.get('faithfulness_score_std', 0):.3f})")
+        print(f"  Score Range: [{faith.get('faithfulness_score_min', 0):.3f}, {faith.get('faithfulness_score_max', 0):.3f}]")
+        print(f"  Avg Sources Evaluated: {faith.get('avg_sources_evaluated', 0):.1f}")
+        print(f"  Evaluation Method: {faith.get('evaluation_method', 'N/A')}")
+    else:
+        print("  No faithfulness data available")
     
     # Abstention Metrics
     print("\n--- Abstention Behavior ---")
-    abst = aggregated['abstention']
-    print(f"  System Abstention Rate: {abst['abstention_rate']:.3f}")
-    print(f"  Should Abstain Rate (gold): {abst['should_abstain_rate']:.3f}")
-    print(f"  Appropriate Behavior Rate: {abst['appropriate_rate']:.3f}")
+    abst = aggregated.get('abstention', {})
+    print(f"  System Abstention Rate: {abst.get('abstention_rate', 0):.3f}")
+    print(f"  Should Abstain Rate (gold): {abst.get('should_abstain_rate', 0):.3f}")
+    print(f"  Appropriate Behavior Rate: {abst.get('appropriate_rate', 0):.3f}")
     print(f"  Breakdown:")
-    print(f"    Correct Answers: {abst['correct_answers']}")
-    print(f"    Correct Abstentions: {abst['correct_abstentions']}")
-    print(f"    False Abstentions: {abst['false_abstentions']}")
-    print(f"    False Confidence: {abst['false_confidence']}")
+    print(f"    Correct Answers: {abst.get('correct_answers', 0)}")
+    print(f"    Correct Abstentions: {abst.get('correct_abstentions', 0)}")
+    print(f"    False Abstentions: {abst.get('false_abstentions', 0)}")
+    print(f"    False Confidence: {abst.get('false_confidence', 0)}")
     
     # Answer Quality
     if aggregated.get('answer_quality'):
@@ -600,4 +694,4 @@ def print_evaluation_summary(aggregated: Dict[str, Any]):
         qual = aggregated['answer_quality']
         print(f"  Word Overlap with Expected: {qual.get('word_overlap_mean', 0):.3f}")
     
-    print("\n" + "="*70)
+    print("\n" + "="*70);

@@ -2,79 +2,44 @@
   "config": {
     "k": 10,
     "strict_mode": false,
-    "use_llm_faithfulness": false
+    "faithfulness_top_k": 2
   },
-  "total_queries": 17,
+  "total_queries": 6,
   "retrieval": {
-    "recall": {
-      "1": 0.013962385355278755,
-      "3": 0.04941828546568877,
-      "5": 0.07752539583448781,
-      "10": 0.1037332112760333
+    "hit_rate": {
+      "1": 0.6666666666666666,
+      "3": 0.8333333333333334,
+      "5": 1.0,
+      "10": 1.0
     },
     "ndcg": {
-      "3": 0.5,
-      "5": 0.48545727435225283,
-      "10": 0.3951700094260614
+      "3": 0.7718216255952429,
+      "5": 0.8606481612170568,
+      "10": 0.8643685828599869
     }
   },
   "generation_summary": {
-    "total_queries": 10,
-    "citation": {
-      "citation_count_mean": 4.3,
-      "citation_count_std": 0.9,
-      "citation_coverage_mean": 0.398,
-      "citation_coverage_std": 0.105,
-      "expected_sources_recall_mean": 0.9,
-      "expected_sources_recall_std": 0.3,
-      "format_quality_mean": 1.0,
-      "format_quality_std": 0.0,
-      "page_accuracy_mean": 0.571,
-      "page_accuracy_std": 0.495
-    },
-    "faithfulness": {
-      "word_overlap_mean": 0.522,
-      "word_overlap_std": 0.12,
-      "ngram_overlap_2_mean": 0.286,
-      "ngram_overlap_2_std": 0.121,
-      "ngram_overlap_3_mean": 0.165,
-      "ngram_overlap_3_std": 0.109,
-      "faithfulness_score_mean": 0.324,
-      "faithfulness_score_std": 0.108
-    },
-    "abstention": {
-      "abstention_rate": 0.0,
-      "should_abstain_rate": 0.0,
-      "appropriate_rate": 1.0,
-      "correct_abstentions": 0,
-      "correct_answers": 10,
-      "false_abstentions": 0,
-      "false_confidence": 0
-    },
-    "answer_quality": {
-      "word_overlap_mean": 0.396
-    },
     "latency": {
       "retrieval_ms": {
-        "mean": 5927.61,
-        "median": 5470.09,
-        "std": 899.78,
-        "p95": 7325.58,
-        "p99": 7552.95
+        "mean": 5395.42,
+        "median": 5482.45,
+        "std": 468.13,
+        "p95": 5876.44,
+        "p99": 5893.01
       },
       "generation_ms": {
-        "mean": 4995.65,
-        "median": 4893.15,
-        "std": 608.24,
-        "p95": 6069.43,
-        "p99": 6273.61
+        "mean": 5550.49,
+        "median": 5646.02,
+        "std": 1262.43,
+        "p95": 6993.41,
+        "p99": 7094.71
       },
       "total_ms": {
-        "mean": 10923.27,
-        "median": 10743.23,
-        "std": 1266.86,
-        "p95": 12764.87,
-        "p99": 12894.53
+        "mean": 10945.92,
+        "median": 11197.5,
+        "std": 1578.08,
+        "p95": 12669.51,
+        "p99": 12837.2
       }
     }
   }
