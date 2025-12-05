@@ -32,7 +32,7 @@ except ImportError as e:
     print(f"Warning: OCR dependencies not available: {e}")
     print("Install with: pip install pytesseract pymupdf Pillow")
 
-load_dotenv()
+load_dotenv(override=True)
 
 os.environ['LANGCHAIN_PROJECT'] = 'NUST Policies Copilot'
 

@@ -17,7 +17,7 @@ from typing_extensions import TypedDict
 import langsmith
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Initialize LangSmith
 os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot"

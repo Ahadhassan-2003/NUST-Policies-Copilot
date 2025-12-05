@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from langsmith import traceable
 import os
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Initialize LangSmith
 os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot"

@@ -13,7 +13,7 @@ from langchain_community.document_loaders import AsyncHtmlLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import AsyncChromiumLoader
 
-load_dotenv()
+load_dotenv(override=True)
 
 os.environ['LANGCHAIN_PROJECT'] = 'NUST Policies Copilot'
 

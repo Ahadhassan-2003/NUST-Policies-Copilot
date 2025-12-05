@@ -23,7 +23,7 @@ from evaluation_metrics import (
     track_latency
 )
 
-load_dotenv()
+load_dotenv(override=True)
 
 # ========= PATHS ========= #
 GOLD_SET_PATH = Path("./eval/final_gold_set.jsonl")

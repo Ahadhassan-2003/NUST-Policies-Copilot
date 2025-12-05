@@ -22,7 +22,7 @@ import os
 # Cross-encoder for reranking
 from sentence_transformers import CrossEncoder
 
-load_dotenv()
+load_dotenv(override=True)
 
 # Initialize LangSmith
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
