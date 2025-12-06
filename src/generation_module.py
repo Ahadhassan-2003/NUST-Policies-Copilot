@@ -22,34 +22,66 @@ load_dotenv(override=True)
 # Initialize LangSmith
 os.environ["LANGCHAIN_PROJECT"] = "NUST Policies Copilot"
 
+# ========= CONFIGURATION ========= #
+# Parent directory for PDF paths - change this to your local path
+PARENT_DIR = r"E:\NUST Policies Copilot"
+
 # ========= SYSTEM PROMPT TEMPLATE ========= #
 SYSTEM_PROMPT = """You are the NUST Policies Copilot, an AI assistant specifically designed to help students, faculty, and staff understand university policies at the National University of Sciences and Technology (NUST).
 
 # CORE RESPONSIBILITIES
 1. **Answer policy questions** using ONLY the provided context documents
-2. **Cite your sources** inline using numbered citations [1], [2], etc.
+2. **Cite your sources** inline using numbered citations with CLICKABLE LINKS
 3. **Be concise** - provide direct, clear answers without unnecessary elaboration
 4. **Stay current** - always prioritize the most recent policy documents
 5. **Abstain when uncertain** - if evidence is weak, outdated, or missing, clearly state limitations
 
 # CITATION REQUIREMENTS (CRITICAL)
-- Every factual claim MUST be supported by a detailed citation with page/section information
-- Citation format: [N: doc_id, p.X] or [N: doc_id, §section] or [N: doc_id, p.X, §section]
-- Examples:
-  * "Students must maintain 2.5 CGPA [1: academic_policy_2024, p.15]."
-  * "Attendance is mandatory [2: student_handbook, §3.2]."
-  * "FYP guidelines state... [3: fyp_guidelines_v1.4, p.19, §SRS Template]."
-- For HTML sources with URLs, you may use: [N: doc_id, URL#section]
-- Multiple sources for one claim: [1: doc_id, p.X][2: doc_id, p.Y]
+Every citation MUST be formatted as a clickable link based on the source type:
+
+## PDF Citations:
+Format: [N: doc_id, §section, p.X](file://PARENT_DIR/url#page=X)
+Example: [1: fyp_guidelines, §SRS Template, p.19](file://E:/NUST Policies Copilot/data/raw/FYP_Guidelines_02_11_2017_v1.4.pdf#page=19)
+
+**IMPORTANT for PDF citations:**
+- Always use the EXACT file path format: file://PARENT_DIR/url#page=X
+- Replace PARENT_DIR with: {parent_dir}
+- The URL from metadata is a relative path like "./data/raw/filename.pdf"
+- Convert it to: file://{parent_dir}/data/raw/filename.pdf#page=X
+- ALWAYS include the section name (§section) if available in metadata
+- ALWAYS include #page=X at the end where X is the page number
+- If no page number is available, use #page=1
+- Format: [N: doc_id, §section, p.X](link) - section comes BEFORE page
+
+## HTML Citations:
+Format: [[N: doc_id, §section]](URL)
+Example: [[2: undergraduate_financial, §Fee Structure]](https://nust.edu.pk/admissions/fee-structure/undergraduate-financial-matters/)
+
+**IMPORTANT for HTML citations:**
+- Always wrap the entire citation in DOUBLE square brackets: [[citation text]](URL)
+- Always use the EXACT URL from metadata
+- Include the section name in the citation text
+- Make the entire citation a clickable link
+- The double brackets make it visually distinct and clickable
+
+## General Citation Rules:
+- Every factual claim MUST have a citation
+- Use multiple citations for claims from multiple sources: [1: doc1, §sec1, p.5](link1) [[2: doc2, §sec2]](link2)
 - The citation number N corresponds to the document number in the context
 - NEVER make claims without citations from the provided context
-- If page or section is not available in metadata, use: [N: doc_id]
-- Always include as much citation detail as available (page, section, URL)
+- Always preserve the EXACT link format as specified above
+- For PDFs: include section (if available) AND page number
+- For HTML: use double brackets format
 
 # ANSWER STRUCTURE
-1. **Direct Answer** (2-3 sentences with inline citations)
-2. **Key Details** (if needed, bullet points with citations)
-3. **See Also** (related documents or sections, if relevant)
+1. **Direct Answer** (2-3 sentences with inline clickable citations)
+2. **Key Details** (if needed, bullet points with clickable citations)
+3. **See Also** (2-3 related documents from context with clickable citations)
+   - Format See Also section like this:
+   
+   **See Also:**
+   - [N: doc_id, p.X](clickable_link) - Brief description
+   - [N: doc_id, §section](clickable_link) - Brief description
 
 # STRICT MODE BEHAVIOR
 When strict_mode is enabled:
@@ -63,7 +95,7 @@ When strict_mode is enabled:
 - Always check document dates (academic_year, last_updated, etc.)
 - Prefer documents from the current or most recent academic year
 - Explicitly warn users when citing policies older than 2 years
-- Format: "According to the 2023-24 policy [1], ..." or "Note: This policy is from 2021 and may be outdated [2]."
+- Format: "According to the 2023-24 policy [1: doc, p.5](link), ..." or "Note: This policy is from 2021 and may be outdated [2: doc](link)."
 
 # SAFETY & ETHICAL GUIDELINES
 - NEVER share personal data about individuals
@@ -92,13 +124,14 @@ Abstain and provide guidance if:
 - Keep paragraphs short (2-3 sentences)
 - Use bullet points for lists
 - Bold important terms or deadlines
-- Include "See Also:" section for related topics
+- ALWAYS include "See Also:" section with 2-3 clickable citations to related documents from the context
 
 # CURRENT CONTEXT
 - Current Date: {current_date}
 - Current Academic Year: {current_academic_year}
+- Parent Directory: {parent_dir}
 
-Remember: Your primary goal is accuracy and helpfulness. When in doubt, abstain and guide users to authoritative sources rather than providing potentially incorrect information.
+Remember: Your primary goal is accuracy and helpfulness. When in doubt, abstain and guide users to authoritative sources rather than providing potentially incorrect information. ALWAYS make citations clickable using the exact formats specified above.
 """
 
 # ========= STATE DEFINITION ========= #
@@ -136,11 +169,14 @@ def format_context_for_prompt(context: List[Dict[str, Any]]) -> str:
         doc_id = metadata.get('doc_id', metadata.get('source', 'Unknown'))
         section = metadata.get('section', '')
         page = metadata.get('page', '')
-        url = metadata.get('url', metadata.get('URL', ''))
+        url = metadata.get('url', '')
+        html_url = metadata.get('URL', '')  # For HTML sources
         year = metadata.get('academic_year', metadata.get('year', 'Unknown'))
+        source_type = metadata.get('source_type', 'unknown')
         
         # Format document header
         formatted.append(f"[{i}] Document: {doc_id}")
+        formatted.append(f"    Source Type: {source_type}")
         if year and year != 'Unknown':
             formatted.append(f"    Year: {year}")
         if page:
@@ -150,14 +186,16 @@ def format_context_for_prompt(context: List[Dict[str, Any]]) -> str:
             section_display = section[:100] + "..." if len(section) > 100 else section
             formatted.append(f"    Section: {section_display}")
         if url:
-            formatted.append(f"    URL: {url}")
+            formatted.append(f"    File Path: {url}")
+        if html_url:
+            formatted.append(f"    URL: {html_url}")
         formatted.append(f"    Content: {text}\n")
     
     return "\n".join(formatted)
 
 def extract_citations(text: str) -> List[int]:
     """Extract citation numbers from text."""
-    pattern = r'\[(\d+)\]'
+    pattern = r'\[(\d+):'
     citations = re.findall(pattern, text)
     return [int(c) for c in citations]
 
@@ -187,55 +225,17 @@ def check_document_freshness(context: List[Dict[str, Any]], current_year: str) -
     
     return outdated
 
-def generate_see_also(context: List[Dict[str, Any]], used_citations: List[int]) -> List[Dict[str, str]]:
-    """Generate 'See Also' links from unused relevant documents with full citation info."""
-    see_also = []
-    
-    for i, doc in enumerate(context, 1):
-        if i not in used_citations and i <= 5:
-            metadata = doc.get('metadata', {})
-            
-            # Build citation string
-            doc_id = metadata.get('doc_id', metadata.get('source', f'Document {i}'))
-            page = metadata.get('page', '')
-            section = metadata.get('section', '')
-            url = metadata.get('url', metadata.get('URL', ''))
-            
-            # Format citation parts
-            citation_parts = [doc_id]
-            if page:
-                citation_parts.append(f"p.{page}")
-            if section:
-                # Truncate long sections
-                section_short = section[:50] + "..." if len(section) > 50 else section
-                citation_parts.append(f"§{section_short}")
-            
-            # FIX: Ensure all elements in the sequence are strings before calling .join()
-            str_citation_parts = [str(part) for part in citation_parts]
-            citation_display = ", ".join(str_citation_parts)
-            
-            see_also.append({
-                'title': doc_id,
-                'section': section,
-                'page': page,
-                'url': url,
-                'citation_num': str(i),
-                'citation_display': citation_display
-            })
-    
-    return see_also[:3]
-
 # ========= LANGGRAPH NODES ========= #
 @langsmith.traceable(name="chat_node")
 def chat_node(state: ChatbotState):
     """Main chat node that generates responses with citations."""
     
     # # Initialize LLM
-    # # llm = ChatOllama(
-    # #     model="qwen2.5:3b-instruct-q4_K_M",
-    # #     temperature=0.5,
-    # #     num_predict=1024
-    # # )
+    # llm = ChatOllama(
+    #     model="qwen2.5:3b-instruct-q4_K_M",
+    #     temperature=0.5,
+    #     num_predict=1024
+    # )
     
     # Initialize LLM
     llm = ChatOpenAI(
@@ -262,7 +262,8 @@ def chat_node(state: ChatbotState):
     # Build system message
     system_msg_content = SYSTEM_PROMPT.format(
         current_date=datetime.now().strftime("%B %d, %Y"),
-        current_academic_year=current_year
+        current_academic_year=current_year,
+        parent_dir=PARENT_DIR
     )
     
     if strict_mode:
@@ -316,6 +317,44 @@ def retrieve_all_threads():
         all_threads.add(checkpoint.config["configurable"]['thread_id']) # type: ignore
     return list(all_threads)
 
+def delete_thread(thread_id: str) -> bool:
+    """Delete a specific thread from the database."""
+    try:
+        cursor = conn.cursor()
+        
+        # Delete from checkpoints table
+        cursor.execute(
+            "DELETE FROM checkpoints WHERE thread_id = ?",
+            (thread_id,)
+        )
+        
+        # Delete from checkpoint_writes table if it exists
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='checkpoint_writes'"
+        )
+        if cursor.fetchone():
+            cursor.execute(
+                "DELETE FROM checkpoint_writes WHERE thread_id = ?",
+                (thread_id,)
+            )
+        
+        # Delete from checkpoint_blobs table if it exists
+        cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='checkpoint_blobs'"
+        )
+        if cursor.fetchone():
+            cursor.execute(
+                "DELETE FROM checkpoint_blobs WHERE thread_id = ?",
+                (thread_id,)
+            )
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error deleting thread {thread_id}: {e}")
+        conn.rollback()
+        return False
+
 # ========= MAIN GENERATION FUNCTION ========= #
 @langsmith.traceable(name="generate_answer_with_retrieval")
 def generate_answer_with_retrieval(
@@ -358,21 +397,10 @@ def generate_answer_with_retrieval(
     # Extract citations
     citations = extract_citations(answer)
     
-    # Generate see-also
-    see_also = generate_see_also(context, citations) if context else []
-    
-    # Add see-also to answer if available
-    if see_also:
-        answer += "\n\n**See Also:**\n"
-        for item in see_also:
-            # Use the full citation display
-            answer += f"- [{item['citation_num']}: {item['citation_display']}]\n"
-    
     return {
         "answer": answer,
         "citations": citations,
         "sources": context,
-        "see_also": see_also,
         "thread_id": thread_id
     }
 
@@ -421,7 +449,10 @@ if __name__ == "__main__":
             "metadata": {
                 "doc_id": "academic_policy_2024",
                 "section": "Academic Standing",
-                "academic_year": "2024-25"
+                "academic_year": "2024-25",
+                "page": 15,
+                "url": "./data/raw/academic_policy_2024.pdf",
+                "source_type": "pdf"
             },
             "score": 0.95
         },
@@ -430,7 +461,9 @@ if __name__ == "__main__":
             "metadata": {
                 "doc_id": "attendance_policy_2024",
                 "section": "Attendance Requirements",
-                "academic_year": "2024-25"
+                "academic_year": "2024-25",
+                "URL": "https://nust.edu.pk/policies/attendance/",
+                "source_type": "html"
             },
             "score": 0.87
         }

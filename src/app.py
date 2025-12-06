@@ -17,8 +17,8 @@ from generation_module import (
     retrieve_all_threads, 
     get_current_academic_year,
     ChatbotState,
-    generate_see_also,
-    extract_citations
+    extract_citations,
+    delete_thread
 )
 
 # ========= PAGE CONFIG ========= #
@@ -96,6 +96,18 @@ st.markdown("""
         background-color: #d4edda;
         border-color: #28a745;
     }
+    
+    .delete-button {
+        float: right;
+        color: #dc3545;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    
+    .delete-button:hover {
+        background-color: #f8d7da;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -116,6 +128,18 @@ def add_thread(thread_id):
     """Add a new thread to the list if it doesn't exist."""
     if thread_id not in st.session_state['chat_threads']:
         st.session_state['chat_threads'].append(thread_id)
+
+def remove_thread(thread_id):
+    """Remove a thread from the list and database."""
+    if thread_id in st.session_state['chat_threads']:
+        st.session_state['chat_threads'].remove(thread_id)
+    
+    # Delete from database
+    delete_thread(thread_id)
+    
+    # If deleting current thread, switch to new chat
+    if thread_id == st.session_state['thread_id']:
+        reset_chat()
 
 def load_conversation(thread_id: str):
     """Load conversation history from a specific thread."""
@@ -158,19 +182,26 @@ def display_source_card(source: Dict, index: int):
     section = metadata.get('section', 'N/A')
     year = metadata.get('academic_year', metadata.get('year', 'N/A'))
     source_type = metadata.get('source_type', 'N/A')
+    page = metadata.get('page', 'N/A')
+    url = metadata.get('url', metadata.get('URL', 'N/A'))
     
     with st.expander(f"📄 [{index}] {doc_id}", expanded=False):
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.markdown(f"**Section:** {section}")
+            st.markdown(f"**Type:** {source_type.upper()}")
         with col2:
             st.markdown(f"**Year:** {year}")
         with col3:
-            st.markdown(f"**Type:** {source_type.upper()}")
+            st.markdown(f"**Page:** {page}")
+        with col4:
+            st.markdown(f"**Section:** {section[:30] + '...' if len(str(section)) > 30 else section}")
+        
+        if url != 'N/A':
+            st.markdown(f"**Source:** `{url}`")
         
         st.markdown("---")
         st.markdown("**Content:**")
-        st.markdown(f"<div class='source-text'>{text[:500]}{'...' if len(text) > 500 else ''}</div>", 
+        st.markdown(f"<div class='source-text'>{text}</div>", 
                    unsafe_allow_html=True)
 
 # ========= SESSION STATE INITIALIZATION ========= #
@@ -203,6 +234,9 @@ if 'current_sources' not in st.session_state:
 
 if 'strict_mode' not in st.session_state:
     st.session_state['strict_mode'] = False
+
+if 'thread_to_delete' not in st.session_state:
+    st.session_state['thread_to_delete'] = None
 
 # Add current thread to list
 add_thread(st.session_state['thread_id'])
@@ -249,23 +283,47 @@ with st.sidebar:
     # Chat History Section
     st.subheader("💬 My Chats")
     
-    # Display chat threads
-    for thread_id in st.session_state['chat_threads']:
+    # Display chat threads with delete buttons
+    threads_to_display = st.session_state['chat_threads'].copy()
+    for thread_id in threads_to_display:
         is_active = thread_id == st.session_state['thread_id']
         preview = get_thread_preview(thread_id)
         
-        button_label = f"{'🟢 ' if is_active else '⚪ '}{preview}"
+        col1, col2 = st.columns([0.85, 0.15])
         
-        if st.button(
-            button_label,
-            key=f"thread_{thread_id}",
-            use_container_width=True,
-            type="secondary" if is_active else "tertiary"
-        ):
-            if thread_id != st.session_state['thread_id']:
-                st.session_state['thread_id'] = thread_id
-                st.session_state['message_history'] = load_conversation(thread_id)
-                st.session_state['current_sources'] = []
+        with col1:
+            button_label = f"{'🟢 ' if is_active else '⚪ '}{preview}"
+            
+            if st.button(
+                button_label,
+                key=f"thread_{thread_id}",
+                use_container_width=True,
+                type="secondary" if is_active else "tertiary"
+            ):
+                if thread_id != st.session_state['thread_id']:
+                    st.session_state['thread_id'] = thread_id
+                    st.session_state['message_history'] = load_conversation(thread_id)
+                    st.session_state['current_sources'] = []
+                    st.rerun()
+        
+        with col2:
+            if st.button("🗑️", key=f"delete_{thread_id}", help="Delete this chat"):
+                st.session_state['thread_to_delete'] = thread_id
+                st.rerun()
+    
+    # Handle deletion confirmation
+    if st.session_state['thread_to_delete']:
+        st.warning(f"Delete chat: {get_thread_preview(st.session_state['thread_to_delete'])}?")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Confirm", key="confirm_delete", use_container_width=True):
+                remove_thread(st.session_state['thread_to_delete'])
+                st.session_state['thread_to_delete'] = None
+                st.success("Chat deleted!")
+                st.rerun()
+        with col2:
+            if st.button("❌ Cancel", key="cancel_delete", use_container_width=True):
+                st.session_state['thread_to_delete'] = None
                 st.rerun()
     
     st.divider()
@@ -289,11 +347,11 @@ with st.sidebar:
         AI assistant for navigating NUST policies.
         
         **Features:**
-        - Evidence-based answers
-        - Inline citations
+        - Evidence-based answers with clickable citations
         - Source verification
         - Multi-turn conversations
         - Persistent chat history
+        - PDF page-specific links
         
         **Disclaimer:** Verify critical information with official NUST offices.
         """)
@@ -304,7 +362,7 @@ st.markdown("Ask me anything about NUST policies, procedures, and regulations.")
 
 # Load indices on first run
 if not st.session_state['indices_loaded']:
-    with st.spinner("🔄 Loading knowledge base..."):
+    with st.spinner("📚 Loading knowledge base..."):
         try:
             chunks, openai_vs, bge_vs, bm25_retriever = load_all_indices()
             st.session_state['chunks'] = chunks
@@ -320,7 +378,7 @@ if not st.session_state['indices_loaded']:
 # Display chat history
 for message in st.session_state['message_history']:
     with st.chat_message(message["role"]):
-        st.write(message["content"])
+        st.markdown(message["content"], unsafe_allow_html=True)
         
         # Display sources if available and it's an assistant message
         if message["role"] == "assistant" and message.get("sources"):
@@ -391,18 +449,6 @@ if user_input:
         # Display streaming response
         ai_message = st.write_stream(ai_only_stream())
         
-        # Add see-also section if applicable
-        citations = extract_citations(ai_message) # type: ignore
-        see_also = generate_see_also(retrieved_docs, citations) if retrieved_docs else []
-        
-        if see_also:
-            see_also_text = "\n\n**See Also:**\n"
-            for item in see_also:
-                # Use full citation display
-                see_also_text += f"- [{item['citation_num']}: {item['citation_display']}]\n"
-            st.markdown(see_also_text)
-            ai_message += see_also_text
-        
         # Display sources
         if retrieved_docs:
             with st.expander("📚 View Sources", expanded=False):
@@ -424,5 +470,8 @@ st.markdown("""
     Always verify important information with official NUST offices and the latest published policies.</p>
     <p>For critical matters, contact the relevant department directly.</p>
     <p style='margin-top: 1rem; font-size: 0.75rem;'>Thread ID: {}</p>
+    <p style='font-size: 0.7rem; margin-top: 0.5rem;'>
+        <strong>Note:</strong> PDF links use file:// protocol. Copy the full link and paste it in your browser's address bar to open PDFs at specific pages.
+    </p>
 </div>
 """.format(st.session_state['thread_id'][:8]), unsafe_allow_html=True)
