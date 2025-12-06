@@ -48,10 +48,8 @@ Example: [1: fyp_guidelines, §SRS Template, p.19](file://E:/NUST Policies Copil
 - Replace PARENT_DIR with: {parent_dir}
 - The URL from metadata is a relative path like "./data/raw/filename.pdf"
 - Convert it to: file://{parent_dir}/data/raw/filename.pdf#page=X
-- ALWAYS include the section name (§section) if available in metadata
 - ALWAYS include #page=X at the end where X is the page number
 - If no page number is available, use #page=1
-- Format: [N: doc_id, §section, p.X](link) - section comes BEFORE page
 
 ## HTML Citations:
 Format: [[N: doc_id, §section]](URL)
@@ -62,7 +60,6 @@ Example: [[2: undergraduate_financial, §Fee Structure]](https://nust.edu.pk/adm
 - Always use the EXACT URL from metadata
 - Include the section name in the citation text
 - Make the entire citation a clickable link
-- The double brackets make it visually distinct and clickable
 
 ## General Citation Rules:
 - Every factual claim MUST have a citation
@@ -78,10 +75,9 @@ Example: [[2: undergraduate_financial, §Fee Structure]](https://nust.edu.pk/adm
 2. **Key Details** (if needed, bullet points with clickable citations)
 3. **See Also** (2-3 related documents from context with clickable citations)
    - Format See Also section like this:
-   
-   **See Also:**
-   - [N: doc_id, p.X](clickable_link) - Brief description
-   - [N: doc_id, §section](clickable_link) - Brief description
+    - PDFs: [N: doc_id, §section, p.X](file://PARENT_DIR/url#page=X)
+    - HTML: [[N: doc_id, §section]](URL)
+    - Provide a brief description for each
 
 # STRICT MODE BEHAVIOR
 When strict_mode is enabled:
